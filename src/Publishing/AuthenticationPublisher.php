@@ -1,6 +1,6 @@
 <?php
 	
-	namespace Quellabs\CanvasAuthentication;
+	namespace Quellabs\CanvasAuthentication\Publishing;
 	
 	use Quellabs\Contracts\Discovery\ProviderInterface;
 	use Quellabs\Contracts\Publishing\AssetPublisher;
