@@ -45,7 +45,6 @@ FILES INSTALLED:
 • database/migrations/create_users_table.php - User table migration
 • config/auth.php - Authentication configuration file
 • src/Controllers/AuthController.php - Authentication controller
-• src/Aspects/AuthenticationAspect.php - AOP before aspect for login validation
 
 ==============================================================================
 NOTES:
