@@ -30,7 +30,8 @@
   },
   "require": {
     "quellabs/contracts": "^1.0",
-    "quellabs/sculpt": "^1.0"
+    "quellabs/sculpt": "^1.0",
+    "quellabs/canvas-validation": "^1.0"
   },
   "autoload": {
     "psr-4": {

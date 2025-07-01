@@ -1,11 +1,11 @@
 <?php
 	
-	namespace Quellabs\CanvasAuthentication\Aspects;
+	namespace Quellabs\CanvasAuthentication;
 	
 	use Quellabs\Contracts\AOP\BeforeAspect;
 	use Quellabs\Contracts\AOP\MethodContext;
-	use Symfony\Component\HttpFoundation\Response;
 	use Symfony\Component\HttpFoundation\RedirectResponse;
+	use Symfony\Component\HttpFoundation\Response;
 	
 	/**
 	 * Authentication aspect that intercepts method calls to check if user is authenticated.

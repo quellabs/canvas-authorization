@@ -70,6 +70,34 @@ HELP;
 		 * @return void True if publishing was successful, false otherwise
 		 */
 		public function publish(string $basePath, bool $force = false): void {
+			$sourcePath = dirname(__FILE__) . "/../../";
+			$targetPathSrc = $basePath . DIRECTORY_SEPARATOR . "src";
+			$targetPathControllers = $targetPathSrc . DIRECTORY_SEPARATOR . "Controllers";
+			$targetPathValidation = $targetPathSrc . DIRECTORY_SEPARATOR . "Validation";
+			$targetPathTemplates = $basePath . DIRECTORY_SEPARATOR . "templates";
+			
+			if (!is_dir($targetPathValidation)) {
+				mkdir($targetPathValidation, 0755, true);
+			}
+			
+			if (!is_dir($targetPathTemplates)) {
+				mkdir($targetPathTemplates, 0755, true);
+			}
+			
+			copy(
+				$sourcePath . DIRECTORY_SEPARATOR . "controllers" . DIRECTORY_SEPARATOR . "AuthenticationController.php",
+				$targetPathControllers . DIRECTORY_SEPARATOR . "AuthenticationController.php"
+			);
+
+			copy(
+				$sourcePath . DIRECTORY_SEPARATOR . "validation" . DIRECTORY_SEPARATOR . "LoginFormValidator.php",
+				$targetPathValidation . DIRECTORY_SEPARATOR . "LoginFormValidator.php"
+			);
+
+			copy(
+				$sourcePath . DIRECTORY_SEPARATOR . "views" . DIRECTORY_SEPARATOR . "login.tpl",
+				$targetPathTemplates . DIRECTORY_SEPARATOR . "login.tpl"
+			);
 		}
 		
 		/**

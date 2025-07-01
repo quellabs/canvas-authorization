@@ -194,10 +194,12 @@
 
     <h1 class="form-title">Sign in to your account</h1>
 
-    {if $error_message}
-        <div class="error-message">
-            {$error_message}
-        </div>
+    {if $errors}
+        {foreach $errors as $error}
+            <div class="error-message">
+                {$error_message}
+            </div>
+        {/foreach}
     {/if}
 
     <form action="{$form_action|default:'/login'}" method="post">
