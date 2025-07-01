@@ -2,6 +2,7 @@
 	
 	namespace App\Controllers;
 	
+	use Quellabs\Canvas\Annotations\Route;
 	use Quellabs\Canvas\Controllers\BaseController;
 	use Symfony\Component\HttpFoundation\RedirectResponse;
 	use Symfony\Component\HttpFoundation\Request;
