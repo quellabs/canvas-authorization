@@ -167,6 +167,10 @@
             text-decoration: underline;
         }
 
+        .errors-container {
+            margin-bottom: 16px;
+        }
+
         .error-message {
             background-color: #490202;
             border: 1px solid #f85149;
@@ -174,7 +178,11 @@
             padding: 8px 12px;
             border-radius: 6px;
             font-size: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
+        }
+
+        .error-message:last-child {
+            margin-bottom: 0;
         }
 
         @media (max-width: 480px) {
@@ -195,11 +203,15 @@
     <h1 class="form-title">Sign in to your account</h1>
 
     {if $errors}
-        {foreach $errors as $error}
-            <div class="error-message">
-                {$error_message}
-            </div>
-        {/foreach}
+        <div class="errors-container">
+            {foreach $errors as $field => $field_errors}
+                {foreach $field_errors as $error_message}
+                    <div class="error-message">
+                        <strong>{$field|capitalize}:</strong> {$error_message}
+                    </div>
+                {/foreach}
+            {/foreach}
+        </div>
     {/if}
 
     <form action="{$form_action|default:'/login'}" method="post">
@@ -209,7 +221,7 @@
                    id="username"
                    name="username"
                    class="form-input"
-                   value="{$username|default:''}"
+                   value="{$smarty.post.username|default:''}"
                    placeholder="Enter your username or email"
                    required>
         </div>

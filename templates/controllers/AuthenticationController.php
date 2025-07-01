@@ -21,7 +21,7 @@
 		
 		/**
 		 * @Route("/login", methods={"POST"})
-		 * @InterceptWith(\Quellabs\CanvasValidation\ValidateAspect, validate=App\Validation\LoginFormValidator)
+		 * @InterceptWith(Quellabs\CanvasValidation\ValidateAspect::class, validate=App\Validation\LoginFormValidator::class)
 		 * @return Response
 		 */
 		public function processLogin(Request $request): Response {
@@ -30,7 +30,8 @@
 				return $this->render('login.tpl', ['errors' => $errors]);
 			}
 			
+			$request->getSession()->set('user_id', 100);
+			
 			return new RedirectResponse("/");
 		}
-	
 	}
