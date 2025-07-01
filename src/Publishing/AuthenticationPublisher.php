@@ -70,7 +70,7 @@ HELP;
 		 * @return void True if publishing was successful, false otherwise
 		 */
 		public function publish(string $basePath, bool $force = false): void {
-			$sourcePath = dirname(__FILE__) . "/../../";
+			$sourcePath = dirname(__FILE__) . "/../../templates/";
 			$targetPathSrc = $basePath . DIRECTORY_SEPARATOR . "src";
 			$targetPathControllers = $targetPathSrc . DIRECTORY_SEPARATOR . "Controllers";
 			$targetPathValidation = $targetPathSrc . DIRECTORY_SEPARATOR . "Validation";
