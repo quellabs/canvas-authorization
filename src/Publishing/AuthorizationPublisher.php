@@ -1,6 +1,6 @@
 <?php
 	
-	namespace Quellabs\CanvasAuthentication\Publishing;
+	namespace Quellabs\CanvasAuthorization\Publishing;
 	
 	use Quellabs\Contracts\Discovery\ProviderInterface;
 	use Quellabs\Contracts\Publishing\AssetPublisher;
@@ -10,7 +10,7 @@
 	 * for the Canvas system. This class implements both ProviderInterface for
 	 * discovery and AssetPublisher for asset publishing functionality.
 	 */
-	class AuthenticationPublisher implements ProviderInterface, AssetPublisher {
+	class AuthorizationPublisher implements ProviderInterface, AssetPublisher {
 		
 		/**
 		 * Returns a human-readable description of this publisher

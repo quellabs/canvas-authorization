@@ -1,6 +1,6 @@
 <?php
 	
-	namespace App\validation;
+	namespace App\Validation;
 	
 	use Quellabs\CanvasValidation\Rules\Email;
 	use Quellabs\CanvasValidation\Rules\NotBlank;

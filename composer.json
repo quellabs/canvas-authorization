@@ -35,13 +35,13 @@
   },
   "autoload": {
     "psr-4": {
-      "Quellabs\\CanvasAuthentication\\": "src/"
+      "Quellabs\\CanvasAuthorization\\": "src/"
     }
   },
   "extra": {
     "discover": {
       "publishers": {
-        "provider": "Quellabs\\CanvasAuthentication\\Publishing\\AuthenticationPublisher"
+        "provider": "Quellabs\\CanvasAuthorization\\Publishing\\AuthorizationPublisher"
       }
     }
   }
