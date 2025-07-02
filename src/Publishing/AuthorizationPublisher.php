@@ -77,108 +77,31 @@ HELP;
 			return "canvas/authorization";
 		}
 		
-		/**
-		 * Publishes authorization assets to the specified base path
-		 * @param string $basePath The base directory path where assets will be published
-		 * @param bool $force Whether to force republish existing assets (default: false)
-		 * @return void
-		 * @throws RuntimeException If publishing fails
-		 */
-		public function publish(string $basePath, bool $force = false): void {
-			$sourcePath = dirname(__FILE__) . "/../../templates/";
-			
-			// Validate source path exists
-			if (!is_dir($sourcePath)) {
-				throw new RuntimeException("Source template directory not found: {$sourcePath}");
-			}
-			
-			// Define target paths
-			$targetPaths = [
-				'src'         => $basePath . DIRECTORY_SEPARATOR . "src",
-				'controllers' => $basePath . DIRECTORY_SEPARATOR . "src" . DIRECTORY_SEPARATOR . "Controllers",
-				'validation'  => $basePath . DIRECTORY_SEPARATOR . "src" . DIRECTORY_SEPARATOR . "Validation",
-				'entities'    => $basePath . DIRECTORY_SEPARATOR . "src" . DIRECTORY_SEPARATOR . "Entities",
-				'templates'   => $basePath . DIRECTORY_SEPARATOR . "templates"
-			];
-			
-			// Create necessary directories
-			$this->createDirectories($targetPaths);
-			
-			// Copy files
-			$this->copyFiles($sourcePath, $targetPaths, $force);
+		public function getSourcePath(): string {
+			return dirname(__FILE__) . "/../../templates/";
 		}
-		
-		/**
-		 * Creates necessary directories for the assets
-		 * @param array $targetPaths Array of target directory paths
-		 * @return void
-		 * @throws RuntimeException If directory creation fails
-		 */
-		private function createDirectories(array $targetPaths): void {
-			$requiredDirs = ['validation', 'entities', 'templates'];
-			
-			foreach ($requiredDirs as $dir) {
-				if (!is_dir($targetPaths[$dir])) {
-					if (!mkdir($targetPaths[$dir], 0755, true)) {
-						throw new RuntimeException("Failed to create directory: {$targetPaths[$dir]}");
-					}
-				}
-			}
-		}
-		
-		/**
-		 * Copies template files to target locations
-		 * @param string $sourcePath Source template directory
-		 * @param array $targetPaths Target directory paths
-		 * @param bool $force Whether to overwrite existing files
-		 * @return void
-		 * @throws RuntimeException If file copying fails
-		 */
-		private function copyFiles(string $sourcePath, array $targetPaths, bool $force): void {
-			$filesToCopy = [
-				[
-					'source' => $sourcePath . "controllers" . DIRECTORY_SEPARATOR . "AuthenticationController.php",
-					'target' => $targetPaths['controllers'] . DIRECTORY_SEPARATOR . "AuthenticationController.php"
-				],
-				[
-					'source' => $sourcePath . "validation" . DIRECTORY_SEPARATOR . "LoginFormValidator.php",
-					'target' => $targetPaths['validation'] . DIRECTORY_SEPARATOR . "LoginFormValidator.php"
-				],
-				[
-					'source' => $sourcePath . "entities" . DIRECTORY_SEPARATOR . "UserEntity.php",
-					'target' => $targetPaths['entities'] . DIRECTORY_SEPARATOR . "UserEntity.php"
-				],
-				[
-					'source' => $sourcePath . "views" . DIRECTORY_SEPARATOR . "login.tpl",
-					'target' => $targetPaths['templates'] . DIRECTORY_SEPARATOR . "login.tpl"
+
+		public function getManifest(): array {
+			return [
+				'files' => [
+					[
+						'source' => "controllers" . DIRECTORY_SEPARATOR . "AuthenticationController.php",
+						'target' => "src" . DIRECTORY_SEPARATOR . "Controllers" . DIRECTORY_SEPARATOR . "AuthenticationController.php"
+					],
+					[
+						'source' => "validation" . DIRECTORY_SEPARATOR . "LoginFormValidator.php",
+						'target' => "src" . DIRECTORY_SEPARATOR . "Validation" . DIRECTORY_SEPARATOR . "LoginFormValidator.php"
+					],
+					[
+						'source' => "entities" . DIRECTORY_SEPARATOR . "UserEntity.php",
+						'target' => "src" . DIRECTORY_SEPARATOR . "Entities" . DIRECTORY_SEPARATOR . "UserEntity.php"
+					],
+					[
+						'source' => "views" . DIRECTORY_SEPARATOR . "login.tpl",
+						'target' => "templates" . DIRECTORY_SEPARATOR . "login.tpl"
+					]
 				]
 			];
-			
-			foreach ($filesToCopy as $file) {
-				$this->copyFile($file['source'], $file['target'], $force);
-			}
-		}
-		
-		/**
-		 * Copies a single file with validation
-		 * @param string $source Source file path
-		 * @param string $target Target file path
-		 * @param bool $force Whether to overwrite existing files
-		 * @return void
-		 * @throws RuntimeException If file copying fails
-		 */
-		private function copyFile(string $source, string $target, bool $force): void {
-			if (!file_exists($source)) {
-				throw new RuntimeException("Source file not found: {$source}");
-			}
-			
-			if (file_exists($target) && !$force) {
-				throw new RuntimeException("Target file already exists (use --force to overwrite): {$target}");
-			}
-			
-			if (!copy($source, $target)) {
-				throw new RuntimeException("Failed to copy file from {$source} to {$target}");
-			}
 		}
 		
 		/**
