@@ -1,6 +1,6 @@
 <?php
 	
-	namespace Quellabs\Canvas\Validation;
+	namespace App\Validation;
 	
 	use Quellabs\CanvasValidation\Contracts\ValidationInterface;
 	use Quellabs\CanvasValidation\Rules\Email;
