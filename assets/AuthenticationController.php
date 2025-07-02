@@ -1,10 +1,9 @@
 <?php
 	
-	namespace App\Controllers;
+	namespace Quellabs\assets;
 	
-	use App\Entities\UserEntity;
-	use Quellabs\Canvas\Annotations\Route;
 	use Quellabs\Canvas\Annotations\InterceptWith;
+	use Quellabs\Canvas\Annotations\Route;
 	use Quellabs\Canvas\Controllers\BaseController;
 	use Quellabs\Contracts\Templates\TemplateRenderException;
 	use Symfony\Component\HttpFoundation\RedirectResponse;

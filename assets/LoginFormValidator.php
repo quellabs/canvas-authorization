@@ -1,10 +1,10 @@
 <?php
 	
-	namespace App\Validation;
+	namespace Quellabs\assets;
 	
+	use Quellabs\CanvasValidation\Contracts\ValidationInterface;
 	use Quellabs\CanvasValidation\Rules\Email;
 	use Quellabs\CanvasValidation\Rules\NotBlank;
-	use Quellabs\CanvasValidation\Contracts\ValidationInterface;
 	
 	/**
 	 * Validator class for login form data

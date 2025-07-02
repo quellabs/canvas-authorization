@@ -50,22 +50,12 @@ COMPONENTS:
 • Login template for user interface
 
 ==============================================================================
-FILES INSTALLED:
-==============================================================================
-• src/Controllers/AuthenticationController.php - Authentication controller
-• src/Validation/LoginFormValidator.php - Login form validation
-• src/Entities/UserEntity.php - User entity for database operations
-• templates/login.tpl - Login page template
-
-==============================================================================
 NOTES:
 ==============================================================================
 The AOP before aspect can be applied to controllers or methods that require
 user authentication, automatically redirecting unauthenticated users to the
-login page.
-
-After installation, you will need to run the migration commands to set up
-the database table.
+login page. After installation, you will need to run the migration commands
+to set up the database table.
 HELP;
 		}
 		
@@ -78,26 +68,26 @@ HELP;
 		}
 		
 		public function getSourcePath(): string {
-			return dirname(__FILE__) . "/../../templates/";
+			return dirname(__FILE__) . "/../../assets/";
 		}
 
 		public function getManifest(): array {
 			return [
 				'files' => [
 					[
-						'source' => "controllers" . DIRECTORY_SEPARATOR . "AuthenticationController.php",
+						'source' => "AuthenticationController.php",
 						'target' => "src" . DIRECTORY_SEPARATOR . "Controllers" . DIRECTORY_SEPARATOR . "AuthenticationController.php"
 					],
 					[
-						'source' => "validation" . DIRECTORY_SEPARATOR . "LoginFormValidator.php",
+						'source' => "LoginFormValidator.php",
 						'target' => "src" . DIRECTORY_SEPARATOR . "Validation" . DIRECTORY_SEPARATOR . "LoginFormValidator.php"
 					],
 					[
-						'source' => "entities" . DIRECTORY_SEPARATOR . "UserEntity.php",
+						'source' => "UserEntity.php",
 						'target' => "src" . DIRECTORY_SEPARATOR . "Entities" . DIRECTORY_SEPARATOR . "UserEntity.php"
 					],
 					[
-						'source' => "views" . DIRECTORY_SEPARATOR . "login.tpl",
+						'source' => "login.tpl",
 						'target' => "templates" . DIRECTORY_SEPARATOR . "login.tpl"
 					]
 				]
@@ -110,16 +100,6 @@ HELP;
 		 */
 		public function getPostPublishInstructions(): string {
 			return <<<INSTRUCTIONS
-==============================================================================
-INSTALLATION COMPLETE
-==============================================================================
-
-The following files have been successfully installed:
-• src/Controllers/AuthenticationController.php
-• src/Validation/LoginFormValidator.php
-• src/Entities/UserEntity.php
-• templates/login.tpl
-
 ==============================================================================
 NEXT STEPS - DATABASE SETUP
 ==============================================================================
