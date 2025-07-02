@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{$page_title|default:"Sign in"}</title>
+    <title>Create your account</title>
     <style>
         * {
             margin: 0;
@@ -22,7 +22,7 @@
             justify-content: center;
         }
 
-        .login-container {
+        .register-container {
             background-color: #161b22;
             border: 1px solid #30363d;
             border-radius: 6px;
@@ -112,19 +112,6 @@
             border-color: #1a7f37;
         }
 
-        .forgot-password {
-            display: block;
-            margin-top: 16px;
-            text-align: center;
-            font-size: 12px;
-            color: #58a6ff;
-            text-decoration: none;
-        }
-
-        .forgot-password:hover {
-            text-decoration: underline;
-        }
-
         .divider {
             margin: 24px 0;
             text-align: center;
@@ -148,7 +135,7 @@
             padding: 0 16px;
         }
 
-        .signup-link {
+        .signin-link {
             text-align: center;
             margin-top: 16px;
             padding: 16px;
@@ -157,13 +144,13 @@
             font-size: 14px;
         }
 
-        .signup-link a {
+        .signin-link a {
             color: #58a6ff;
             text-decoration: none;
             font-weight: 500;
         }
 
-        .signup-link a:hover {
+        .signin-link a:hover {
             text-decoration: underline;
         }
 
@@ -185,8 +172,15 @@
             margin-bottom: 0;
         }
 
+        .password-requirements {
+            font-size: 12px;
+            color: #7d8590;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
         @media (max-width: 480px) {
-            .login-container {
+            .register-container {
                 margin: 16px;
                 padding: 24px;
             }
@@ -194,13 +188,13 @@
     </style>
 </head>
 <body>
-<div class="login-container">
+<div class="register-container">
     <!-- Logo -->
     <svg class="logo" viewBox="0 0 16 16" version="1.1" aria-hidden="true">
         <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
     </svg>
 
-    <h1 class="form-title">Sign in to your account</h1>
+    <h1 class="form-title">Create your account</h1>
 
     {if $errors}
         <div class="errors-container">
@@ -218,15 +212,26 @@
         </div>
     {/if}
 
-    <form action="{$form_action|default:'/login'}" method="post">
+    <form action="/register" method="post" id="registerForm">
         <div class="form-group">
-            <label for="username" class="form-label">Username or email address</label>
+            <label for="name" class="form-label">Full name</label>
             <input type="text"
+                   id="name"
+                   name="name"
+                   class="form-input"
+                   placeholder="Enter your full name"
+                   value="{$smarty.post.name|default:""}"
+                   required>
+        </div>
+
+        <div class="form-group">
+            <label for="username" class="form-label">Email address</label>
+            <input type="email"
                    id="username"
                    name="username"
                    class="form-input"
-                   value="{$smarty.post.username|default:''}"
-                   placeholder="Enter your username or email"
+                   placeholder="Enter your email address"
+                   value="{$smarty.post.username|default:""}"
                    required>
         </div>
 
@@ -236,24 +241,70 @@
                    id="password"
                    name="password"
                    class="form-input"
-                   placeholder="Enter your password"
+                   placeholder="Create a password"
+                   required>
+            <div class="password-requirements">
+                Password must be at least 8 characters long
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="confirm-password" class="form-label">Confirm password</label>
+            <input type="password"
+                   id="confirm-password"
+                   name="confirm_password"
+                   class="form-input"
+                   placeholder="Confirm your password"
                    required>
         </div>
 
-        <button type="submit" class="btn btn-primary">Sign in</button>
-
-        <a href="{$forgot_password_url|default:'/forgot-password'}" class="forgot-password">
-            Forgot password?
-        </a>
+        <button type="submit" class="btn btn-primary">Create account</button>
     </form>
 
     <div class="divider">
         <span>or</span>
     </div>
 
-    <div class="signup-link">
-        New to our platform? <a href="{$signup_url|default:'/register'}">Create an account</a>
+    <div class="signin-link">
+        Already have an account? <a href="/login">Sign in</a>
     </div>
 </div>
+
+<script>
+    // Basic form validation
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        const errorsContainer = document.getElementById('errorsContainer');
+
+        // Clear previous errors
+        errorsContainer.innerHTML = '';
+        errorsContainer.style.display = 'none';
+
+        let errors = [];
+
+        // Check password length
+        if (password.length < 8) {
+            errors.push('Password must be at least 8 characters long');
+        }
+
+        // Check password match
+        if (password !== confirmPassword) {
+            errors.push('Passwords do not match');
+        }
+
+        // Display errors if any
+        if (errors.length > 0) {
+            e.preventDefault();
+            errors.forEach(error => {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = error;
+                errorsContainer.appendChild(errorDiv);
+            });
+            errorsContainer.style.display = 'block';
+        }
+    });
+</script>
 </body>
 </html>

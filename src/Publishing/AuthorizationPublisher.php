@@ -83,12 +83,20 @@ HELP;
 						'target' => "src" . DIRECTORY_SEPARATOR . "Validation" . DIRECTORY_SEPARATOR . "LoginFormValidator.php"
 					],
 					[
+						'source' => "RegistrationFormValidator.php",
+						'target' => "src" . DIRECTORY_SEPARATOR . "Validation" . DIRECTORY_SEPARATOR . "RegistrationFormValidator.php"
+					],
+					[
 						'source' => "UserEntity.php",
 						'target' => "src" . DIRECTORY_SEPARATOR . "Entities" . DIRECTORY_SEPARATOR . "UserEntity.php"
 					],
 					[
 						'source' => "login.tpl",
 						'target' => "templates" . DIRECTORY_SEPARATOR . "login.tpl"
+					],
+					[
+						'source' => "registration_form.tpl",
+						'target' => "templates" . DIRECTORY_SEPARATOR . "registration_form.tpl"
 					]
 				]
 			];

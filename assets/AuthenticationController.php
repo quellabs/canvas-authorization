@@ -4,6 +4,8 @@
 	
 	use App\Entities\UserEntity;
 	use Quellabs\Canvas\Annotations\Route;
+	use Quellabs\ObjectQuel\ObjectQuel\QuelException;
+	use Quellabs\ObjectQuel\OrmException;
 	use Symfony\Component\HttpFoundation\Request;
 	use Symfony\Component\HttpFoundation\Response;
 	use Quellabs\Canvas\Annotations\InterceptWith;
@@ -21,8 +23,7 @@
 		 * @throws TemplateRenderException
 		 */
 		public function login(Request $request): Response {
-			// If the user is already logged in, redirect to home
-			if ($this->isLoggedIn($request)) {
+			if (!empty($request->getSession()->get('user_id'))) {
 				return new RedirectResponse('/');
 			}
 			
@@ -38,23 +39,84 @@
 		 * @throws TemplateRenderException
 		 */
 		public function processLogin(Request $request): Response {
-			// Check if form validation passed
+			// Check if form validation passed - if not, return to login form with validation errors
 			if (!$request->attributes->get('validation_passed', true)) {
-				return $this->showLoginErrors($request->attributes->get('validation_errors', []));
+				return $this->render('login.tpl', ['errors' => $request->attributes->get('validation_errors', [])]);
 			}
 			
-			// Find user by username
-			$user = $this->findUser($request->get('username'));
+			// Extract login credentials from the request
+			$username = $request->get('username');
+			$password = $request->get('password');
+			
+			// Look up the user by username
+			$user = $this->findUser($username);
 			
 			// Verify user exists and password is correct
-			if (!$user || !$this->checkPassword($request->get('password'), $user)) {
-				return $this->showLoginError('Invalid username or password.');
+			if (!$user || !$this->checkPassword($password, $user)) {
+				// Return to login form with generic error message (avoid revealing whether username or password was wrong)
+				return $this->render('login.tpl', ['errors' => ['general' => ['Invalid username or password.']]]);
 			}
 			
-			// Set user session
-			$this->loginUser($request, $user);
+			// Authentication successful - store user ID in session
+			$request->getSession()->set('user_id', $user->getId());
 			
-			// Redirect to home
+			// Redirect to home page after successful login
+			return new RedirectResponse('/');
+		}
+		
+		/**
+		 * Display the registration form
+		 * @Route("/register", methods={"GET"})
+		 * @return Response
+		 * @throws TemplateRenderException
+		 */
+		public function registration(): Response {
+			return $this->render('registration_form.tpl');
+		}
+		
+		/**
+		 * Process registration form submission
+		 * @Route("/register", methods={"POST"})
+		 * @InterceptWith(Quellabs\CanvasValidation\ValidateAspect::class, validate=App\Validation\RegistrationFormValidator::class)
+		 * @param Request $request
+		 * @return Response
+		 * @throws TemplateRenderException|OrmException
+		 */
+		public function processRegistration(Request $request): Response {
+			// Check if validation passed from the interceptor
+			// If validation failed, return to form with validation errors
+			if (!$request->attributes->get('validation_passed', true)) {
+				return $this->render('registration_form.tpl', ['errors' => $request->attributes->get('validation_errors', [])]);
+			}
+			
+			// Extract form data from the request
+			$username = $request->request->get('username');
+			$password = $request->request->get('password');
+			$confirmPassword = $request->request->get('confirm_password');
+			
+			// Server-side password confirmation check
+			// Ensure both password fields match
+			if ($password !== $confirmPassword) {
+				return $this->render('registration_form.tpl', ['errors' => ['general' => ['Passwords do not match.']]]);
+			}
+			
+			// Check if username is already taken
+			// Query database to see if user exists
+			$user = $this->findUser($username);
+			if ($user) {
+				// Return error if username already exists
+				return $this->render('registration_form.tpl', ['errors' => ['general' => ['User already exists.']]]);
+			}
+			
+			// Create new user account
+			// This likely handles password hashing and database insertion
+			$user = $this->createUser($username, $password);
+			
+			// Log the user in automatically after successful registration
+			// Store user ID in session for authentication
+			$request->getSession()->set('user_id', $user->getId());
+			
+			// Redirect to home page after successful registration
 			return new RedirectResponse('/');
 		}
 		
@@ -65,18 +127,8 @@
 		 * @return Response
 		 */
 		public function logout(Request $request): Response {
-			// Clear all session data
 			$request->getSession()->clear();
 			return new RedirectResponse('/');
-		}
-		
-		/**
-		 * Check if user is currently logged in
-		 * @param Request $request
-		 * @return bool
-		 */
-		private function isLoggedIn(Request $request): bool {
-			return !empty($request->getSession()->get('user_id'));
 		}
 		
 		/**
@@ -85,8 +137,12 @@
 		 * @return UserEntity|null
 		 */
 		private function findUser(string $username): ?UserEntity {
-			$users = $this->em->findBy(UserEntity::class, ['username' => $username]);
-			return empty($users) ? null : $users[0];
+			try {
+				$users = $this->em->findBy(UserEntity::class, ['username' => $username]);
+				return empty($users) ? null : $users[0];
+			} catch (QuelException $e) {
+				return null;
+			}
 		}
 		
 		/**
@@ -100,34 +156,23 @@
 		}
 		
 		/**
-		 * Store user ID in session to log them in
-		 * @param Request $request
-		 * @param UserEntity $user
-		 * @return void
+		 * Create a new user and persist to database
+		 * @param string $username
+		 * @param string $password
+		 * @return UserEntity|null
 		 */
-		private function loginUser(Request $request, UserEntity $user): void {
-			$request->getSession()->set('user_id', $user->getId());
-		}
-		
-		/**
-		 * Render login template with a single error message
-		 * @param string $message
-		 * @return Response
-		 * @throws TemplateRenderException
-		 */
-		private function showLoginError(string $message): Response {
-			return $this->render('login.tpl', [
-				'errors' => ['general' => [[$message]]]
-			]);
-		}
-		
-		/**
-		 * Render login template with validation errors
-		 * @param array $errors
-		 * @return Response
-		 * @throws TemplateRenderException
-		 */
-		private function showLoginErrors(array $errors): Response {
-			return $this->render('login.tpl', ['errors' => $errors]);
+		private function createUser(string $username, string $password): ?UserEntity {
+			try {
+				$user = new UserEntity();
+				$user->setUsername($username);
+				$user->setPassword(password_hash($password, PASSWORD_DEFAULT));
+				
+				$this->em->persist($user);
+				$this->em->flush();
+				
+				return $user;
+			} catch (OrmException $e) {
+				return null;
+			}
 		}
 	}
