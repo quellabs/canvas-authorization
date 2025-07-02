@@ -2,14 +2,14 @@
 	
 	namespace App\Controllers;
 	
-	use Quellabs\Canvas\Annotations\InterceptWith;
+	use App\Entities\UserEntity;
 	use Quellabs\Canvas\Annotations\Route;
-	use Quellabs\Canvas\Controllers\BaseController;
-	use Quellabs\Canvas\Entities\UserEntity;
-	use Quellabs\Contracts\Templates\TemplateRenderException;
-	use Symfony\Component\HttpFoundation\RedirectResponse;
 	use Symfony\Component\HttpFoundation\Request;
 	use Symfony\Component\HttpFoundation\Response;
+	use Quellabs\Canvas\Annotations\InterceptWith;
+	use Quellabs\Canvas\Controllers\BaseController;
+	use Symfony\Component\HttpFoundation\RedirectResponse;
+	use Quellabs\Contracts\Templates\TemplateRenderException;
 	
 	class AuthenticationController extends BaseController {
 		
