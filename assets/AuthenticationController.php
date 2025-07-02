@@ -1,10 +1,11 @@
 <?php
 	
-	namespace Quellabs\assets;
+	namespace App\Controllers;
 	
 	use Quellabs\Canvas\Annotations\InterceptWith;
 	use Quellabs\Canvas\Annotations\Route;
 	use Quellabs\Canvas\Controllers\BaseController;
+	use Quellabs\Canvas\Entities\UserEntity;
 	use Quellabs\Contracts\Templates\TemplateRenderException;
 	use Symfony\Component\HttpFoundation\RedirectResponse;
 	use Symfony\Component\HttpFoundation\Request;
@@ -20,7 +21,7 @@
 		 * @throws TemplateRenderException
 		 */
 		public function login(Request $request): Response {
-			// If user is already logged in, redirect to home
+			// If the user is already logged in, redirect to home
 			if ($this->isLoggedIn($request)) {
 				return new RedirectResponse('/');
 			}

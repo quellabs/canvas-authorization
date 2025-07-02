@@ -1,6 +1,6 @@
 <?php
 	
-	namespace Quellabs\assets;
+	namespace Quellabs\Canvas\Entities;
 	
 	use Quellabs\ObjectQuel\Annotations\Orm\Column;
 	use Quellabs\ObjectQuel\Annotations\Orm\ManyToOne;
