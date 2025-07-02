@@ -130,7 +130,7 @@ INSTRUCTIONS;
 		 * @return bool True if publishing is possible, false otherwise
 		 */
 		public function canPublish(): bool {
-			$sourcePath = dirname(__FILE__) . "/../../templates/";
+			$sourcePath = dirname(__FILE__) . "/../../assets/";
 			return is_dir($sourcePath) && is_readable($sourcePath);
 		}
 		
@@ -140,7 +140,7 @@ INSTRUCTIONS;
 		 * @return string Human-readable reason for publishing failure
 		 */
 		public function getCannotPublishReason(): string {
-			$sourcePath = dirname(__FILE__) . "/../../templates/";
+			$sourcePath = dirname(__FILE__) . "/../../assets/";
 			
 			if (!is_dir($sourcePath)) {
 				return "Template directory not found: {$sourcePath}";
