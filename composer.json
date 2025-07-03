@@ -41,7 +41,7 @@
   "extra": {
     "discover": {
       "publishers": {
-        "provider": "Quellabs\\CanvasAuthorization\\Publishing\\AuthorizationPublisher"
+        "provider": "Quellabs\\CanvasAuthorization\\AuthorizationPublisher"
       }
     }
   }

@@ -1,6 +1,6 @@
 <?php
 	
-	namespace Quellabs\CanvasAuthorization;
+	namespace App\Aspects;
 	
 	use Quellabs\Contracts\AOP\BeforeAspect;
 	use Quellabs\Contracts\AOP\MethodContext;

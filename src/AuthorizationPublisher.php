@@ -1,6 +1,6 @@
 <?php
 	
-	namespace Quellabs\CanvasAuthorization\Publishing;
+	namespace Quellabs\CanvasAuthorization;
 	
 	use Quellabs\Contracts\Discovery\ProviderInterface;
 	use Quellabs\Contracts\Publishing\AssetPublisher;
@@ -91,6 +91,10 @@ HELP;
 						'target' => "src" . DIRECTORY_SEPARATOR . "Entities" . DIRECTORY_SEPARATOR . "UserEntity.php"
 					],
 					[
+						'source' => "AuthenticationAspect.php",
+						'target' => "src" . DIRECTORY_SEPARATOR . "Aspects" . DIRECTORY_SEPARATOR . "AuthenticationAspect.php"
+					],
+					[
 						'source' => "login.tpl",
 						'target' => "templates" . DIRECTORY_SEPARATOR . "login.tpl"
 					],
@@ -127,7 +131,8 @@ USAGE
 After completing the database setup, you can:
 • Access the login page through your routing system
 • Use the AuthenticationController for login/logout functionality
-• Apply authentication validation to your controllers using AOP aspects
+• Apply authentication validation to your controllers using the AuthenticationAspect aspect:
+  @InterceptWith(App\Aspects\AuthenticationAspect::class)
 
 The authorization system is now ready for use!
 INSTRUCTIONS;
