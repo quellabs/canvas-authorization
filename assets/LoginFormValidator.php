@@ -2,7 +2,7 @@
 	
 	namespace App\Validation;
 	
-	use Quellabs\Canvas\Validation\ValidationInterface;
+	use Quellabs\Canvas\Validation\Contracts\ValidationInterface;
 	use Quellabs\Canvas\Validation\Rules\Email;
 	use Quellabs\Canvas\Validation\Rules\NotBlank;
 	
