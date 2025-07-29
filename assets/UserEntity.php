@@ -34,6 +34,11 @@
 		protected string $password;
 		
 		/**
+		 * @Orm\Column(name="banned", type="boolean")
+		 */
+		protected bool $banned = false;
+		
+		/**
 		 * Get id
 		 * @return int
 		 */
@@ -74,6 +79,24 @@
 		 */
 		public function setPassword(string $password): self {
 			$this->password = $password;
+			return $this;
+		}
+		
+		/**
+		 * Returns true if the user was banned, false if not
+		 * @return bool
+		 */
+		public function getBanned(): bool {
+			return $this->banned;
+		}
+		
+		/**
+		 * Sets banned status
+		 * @param string $banned
+		 * @return $this
+		 */
+		public function setBanned(string $banned): self {
+			$this->banned = $banned;
 			return $this;
 		}
 	}
