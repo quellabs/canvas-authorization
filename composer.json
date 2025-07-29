@@ -33,7 +33,8 @@
   },
   "require": {
     "quellabs/contracts": "^1.",
-    "quellabs/sculpt": "^1."
+    "quellabs/sculpt": "^1.",
+    "quellabs/support": "^1."
   },
   "autoload": {
     "psr-4": {

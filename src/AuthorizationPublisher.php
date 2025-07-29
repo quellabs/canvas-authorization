@@ -4,7 +4,6 @@
 	
 	use Quellabs\Contracts\Discovery\ProviderInterface;
 	use Quellabs\Contracts\Publishing\AssetPublisher;
-	use RuntimeException;
 	
 	/**
 	 * AuthorizationPublisher handles the publishing of authorization-related assets
@@ -68,7 +67,7 @@ HELP;
 		}
 		
 		public function getSourcePath(): string {
-			return dirname(__FILE__) . "/../../assets/";
+			return dirname(__FILE__) . "/../assets/";
 		}
 
 		public function getManifest(): array {
