@@ -26,12 +26,14 @@
     },
     "sort-packages": true,
     "optimize-autoloader": true,
-    "classmap-authoritative": true
+    "classmap-authoritative": true,
+    "allow-plugins": {
+      "quellabs/discover": true
+    }
   },
   "require": {
-    "quellabs/contracts": "^1.0",
-    "quellabs/sculpt": "^1.0",
-    "quellabs/canvas-validation": "^1.0"
+    "quellabs/contracts": "^1.",
+    "quellabs/sculpt": "^1."
   },
   "autoload": {
     "psr-4": {
