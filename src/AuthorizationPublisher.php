@@ -19,6 +19,19 @@
 		private array $config = [];
 		
 		/**
+		 * The path where the assets are located
+		 * @var string
+		 */
+		private string $sourcePath;
+		
+		/**
+		 * AuthorizationPublisher constructor
+		 */
+		public function __construct() {
+			$this->sourcePath = dirname(__FILE__) . "/../assets/";
+		}
+		
+		/**
 		 * Returns a human-readable description of this publisher
 		 * @return string The description of the authorization publisher
 		 */
@@ -67,7 +80,7 @@ HELP;
 		}
 		
 		public function getSourcePath(): string {
-			return dirname(__FILE__) . "/../assets/";
+			return $this->sourcePath;
 		}
 
 		public function getManifest(): array {
@@ -146,8 +159,7 @@ INSTRUCTIONS;
 		 * @return bool True if publishing is possible, false otherwise
 		 */
 		public function canPublish(): bool {
-			$sourcePath = dirname(__FILE__) . "/../../assets/";
-			return is_dir($sourcePath) && is_readable($sourcePath);
+			return is_dir($this->sourcePath) && is_readable($this->sourcePath);
 		}
 		
 		/**
@@ -156,14 +168,12 @@ INSTRUCTIONS;
 		 * @return string Human-readable reason for publishing failure
 		 */
 		public function getCannotPublishReason(): string {
-			$sourcePath = dirname(__FILE__) . "/../../assets/";
-			
-			if (!is_dir($sourcePath)) {
-				return "Template directory not found: {$sourcePath}";
+			if (!is_dir($this->sourcePath)) {
+				return "Template directory not found: {$this->sourcePath}";
 			}
 			
-			if (!is_readable($sourcePath)) {
-				return "Template directory is not readable: {$sourcePath}";
+			if (!is_readable($this->sourcePath)) {
+				return "Template directory is not readable: {$this->sourcePath}";
 			}
 			
 			return "Unknown reason - publishing should be possible";
