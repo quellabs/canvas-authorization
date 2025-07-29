@@ -86,7 +86,7 @@
 		 * Returns true if the user was banned, false if not
 		 * @return bool
 		 */
-		public function getBanned(): bool {
+		public function isBanned(): bool {
 			return $this->banned;
 		}
 		

@@ -3,6 +3,7 @@
 	namespace App\Controllers;
 	
 	use App\Entities\UserEntity;
+	use App\Exceptions\UserCreationException;
 	use Quellabs\Canvas\Annotations\Route;
 	use Quellabs\ObjectQuel\ObjectQuel\QuelException;
 	use Quellabs\ObjectQuel\OrmException;
@@ -28,6 +29,27 @@
 			}
 			
 			return $this->render('login.tpl');
+		}
+		
+		/**
+		 * Log out the current user
+		 * @Route("/logout", methods={"POST", "GET"})
+		 * @param Request $request
+		 * @return Response
+		 */
+		public function logout(Request $request): Response {
+			$request->getSession()->clear();
+			return new RedirectResponse('/');
+		}
+		
+		/**
+		 * Display the registration form
+		 * @Route("/register", methods={"GET"})
+		 * @return Response
+		 * @throws TemplateRenderException
+		 */
+		public function registration(): Response {
+			return $this->render('registration_form.tpl');
 		}
 		
 		/**
@@ -65,19 +87,9 @@
 		}
 		
 		/**
-		 * Display the registration form
-		 * @Route("/register", methods={"GET"})
-		 * @return Response
-		 * @throws TemplateRenderException
-		 */
-		public function registration(): Response {
-			return $this->render('registration_form.tpl');
-		}
-		
-		/**
 		 * Process registration form submission
 		 * @Route("/register", methods={"POST"})
-		 * @InterceptWith(Quellabs\CanvasValidation\ValidateAspect::class, validate=App\Validation\RegistrationFormValidator::class)
+		 * @InterceptWith(Quellabs\CanvasValidation\ValidateAspect::class, validator=App\Validation\RegistrationFormValidator::class)
 		 * @param Request $request
 		 * @return Response
 		 * @throws TemplateRenderException|OrmException
@@ -103,33 +115,32 @@
 			// Check if username is already taken
 			// Query database to see if user exists
 			$user = $this->findUser($username);
+			
 			if ($user) {
 				// Return error if username already exists
-				return $this->render('registration_form.tpl', ['errors' => ['general' => ['User already exists.']]]);
+				return $this->render('registration_form.tpl', [
+					'errors' => ['general' => ['User already exists.']]
+				]);
 			}
 			
-			// Create new user account
-			// This likely handles password hashing and database insertion
-			$user = $this->createUser($username, $password);
-			
-			// Log the user in automatically after successful registration
-			// Store user ID in session for authentication
-			$request->getSession()->set('user_id', $user->getId());
-			
-			// Redirect to home page after successful registration
-			return new RedirectResponse('/');
+			try {
+				// Create new user account
+				// This likely handles password hashing and database insertion
+				$user = $this->createUser($username, $password);
+				
+				// Log the user in automatically after successful registration
+				// Store user ID in session for authentication
+				$request->getSession()->set('user_id', $user->getId());
+				
+				// Redirect to home page after successful registration
+				return new RedirectResponse('/');
+			} catch (UserCreationException $e) {
+				return $this->render('registration_form.tpl', [
+					'errors' => ['general' => ['Registration failed. Please try again.']]
+				]);
+			}
 		}
 		
-		/**
-		 * Log out the current user
-		 * @Route("/logout", methods={"POST"})
-		 * @param Request $request
-		 * @return Response
-		 */
-		public function logout(Request $request): Response {
-			$request->getSession()->clear();
-			return new RedirectResponse('/');
-		}
 		
 		/**
 		 * Find user by username in database
@@ -159,9 +170,10 @@
 		 * Create a new user and persist to database
 		 * @param string $username
 		 * @param string $password
-		 * @return UserEntity|null
+		 * @return UserEntity
+		 * @throws UserCreationException
 		 */
-		private function createUser(string $username, string $password): ?UserEntity {
+		private function createUser(string $username, string $password): UserEntity {
 			try {
 				$user = new UserEntity();
 				$user->setUsername($username);
@@ -172,7 +184,11 @@
 				
 				return $user;
 			} catch (OrmException $e) {
-				return null;
+				// Log the actual database error for debugging
+				error_log("User creation failed: " . $e->getMessage());
+				
+				// Throw a more specific exception
+				throw new UserCreationException("Failed to create user account", 0, $e);
 			}
 		}
 	}

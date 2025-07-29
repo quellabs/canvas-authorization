@@ -94,6 +94,10 @@ HELP;
 						'target' => "src" . DIRECTORY_SEPARATOR . "Aspects" . DIRECTORY_SEPARATOR . "AuthenticationAspect.php"
 					],
 					[
+						'source' => "UserCreationException.php",
+						'target' => "src" . DIRECTORY_SEPARATOR . "Exceptions" . DIRECTORY_SEPARATOR . "UserCreationException.php"
+					],
+					[
 						'source' => "login.tpl",
 						'target' => "templates" . DIRECTORY_SEPARATOR . "login.tpl"
 					],
