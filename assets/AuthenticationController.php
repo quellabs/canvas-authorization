@@ -55,7 +55,7 @@
 		/**
 		 * Process login form submission
 		 * @Route("/login", methods={"POST"})
-		 * @InterceptWith(Quellabs\CanvasValidation\ValidateAspect::class, validate=App\Validation\LoginFormValidator::class)
+		 * @InterceptWith(Quellabs\Canvas\Validation\ValidateAspect::class, validator=App\Validation\LoginFormValidator::class)
 		 * @param Request $request
 		 * @return Response
 		 * @throws TemplateRenderException
@@ -89,7 +89,7 @@
 		/**
 		 * Process registration form submission
 		 * @Route("/register", methods={"POST"})
-		 * @InterceptWith(Quellabs\CanvasValidation\ValidateAspect::class, validator=App\Validation\RegistrationFormValidator::class)
+		 * @InterceptWith(Quellabs\Canvas\Validation\ValidateAspect::class, validator=App\Validation\RegistrationFormValidator::class)
 		 * @param Request $request
 		 * @return Response
 		 * @throws TemplateRenderException|OrmException
