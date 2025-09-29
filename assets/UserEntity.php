@@ -13,7 +13,7 @@
 	
 	/**
 	 * @Orm\Index(name="idx_username", columns={"username"})
-	 * @Orm\Table(name="user")
+	 * @Orm\Table(name="users")
 	 */
 	class UserEntity {
 		
