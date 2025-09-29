@@ -149,7 +149,7 @@
 		 */
 		private function findUser(string $username): ?UserEntity {
 			try {
-				$users = $this->em->findBy(UserEntity::class, ['username' => $username]);
+				$users = $this->em()->findBy(UserEntity::class, ['username' => $username]);
 				return empty($users) ? null : $users[0];
 			} catch (QuelException $e) {
 				return null;
@@ -179,8 +179,8 @@
 				$user->setUsername($username);
 				$user->setPassword(password_hash($password, PASSWORD_DEFAULT));
 				
-				$this->em->persist($user);
-				$this->em->flush();
+				$this->em()->persist($user);
+				$this->em()->flush();
 				
 				return $user;
 			} catch (OrmException $e) {
