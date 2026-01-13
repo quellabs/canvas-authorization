@@ -1,11 +1,11 @@
 <?php
 	
-	namespace Quellabs\Canvas\Sculpt;
+	namespace Quellabs\CanvasAuthorization;
 	
 	use Quellabs\Sculpt\Application;
 	use Quellabs\Sculpt\ServiceProvider;
 	
-	class CanvasProvider extends ServiceProvider {
+	class AuthProvider extends ServiceProvider {
 		
 		public function register(Application $application): void {
 			// Register the commands into the Sculpt application

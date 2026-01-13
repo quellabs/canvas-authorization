@@ -44,7 +44,7 @@
   "extra": {
     "discover": {
       "sculpt": {
-        "provider": "Quellabs\\CanvasAuthorization\\AuthorizationPublisher"
+        "provider": "Quellabs\\CanvasAuthorization\\AuthProvider"
       }
     }
   }
