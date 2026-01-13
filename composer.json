@@ -43,7 +43,7 @@
   },
   "extra": {
     "discover": {
-      "publishers": {
+      "sculpt": {
         "provider": "Quellabs\\CanvasAuthorization\\AuthorizationPublisher"
       }
     }
