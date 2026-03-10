@@ -3,9 +3,9 @@
 	namespace Quellabs\CanvasAuthorization;
 	
 	use Quellabs\Sculpt\ConfigurationManager;
-	use Quellabs\Sculpt\Contracts\CommandBase;
+	use Quellabs\Sculpt\Contracts\StubCommand;
 	
-	class MakeAuthCommand extends CommandBase {
+	class MakeAuthCommand extends StubCommand {
 		
 		/**
 		 * Returns the signature of this command
@@ -24,7 +24,36 @@
 		}
 		
 		/**
-		 * Execute the command
+		 * Return stubs to copy: stub path (relative to package stubs/) => target path (relative to project root)
+		 * @return array<string, string>
+		 */
+		protected function getStubs(): array {
+			$engine = $this->resolveTemplateEngine();
+			
+			$templateExtensions = [
+				'smarty' => 'tpl',
+				'blade'  => 'blade.php',
+				'latte'  => 'latte',
+				'php'    => 'php',
+				'twig'   => 'twig',
+			];
+			
+			$ext = $templateExtensions[$engine] ?? 'tpl';
+			
+			return [
+				'Controllers/AuthenticationController.php'     => 'src/Controllers/AuthenticationController.php',
+				'Validation/LoginFormValidator.php'            => 'src/Validation/LoginFormValidator.php',
+				'Validation/RegistrationFormValidator.php'     => 'src/Validation/RegistrationFormValidator.php',
+				'Entities/UserEntity.php'                      => 'src/Entities/UserEntity.php',
+				'Aspects/AuthenticationAspect.php'             => 'src/Aspects/AuthenticationAspect.php',
+				'Exceptions/UserCreationException.php'         => 'src/Exceptions/UserCreationException.php',
+				"{$engine}/templates/login.{$ext}"             => "templates/login.{$ext}",
+				"{$engine}/templates/registration_form.{$ext}" => "templates/registration_form.{$ext}",
+			];
+		}
+		
+		/**
+		 * Execute the command, then show next steps on success.
 		 * @param ConfigurationManager $config
 		 * @return int Exit code (0 = success, 1 = error)
 		 */
@@ -32,84 +61,17 @@
 			$this->output->writeLn("<info>Installing Authentication System</info>");
 			$this->output->writeLn("");
 			
-			$stubPath = $this->getStubPath();
-			$force = $config->hasFlag('force');
+			$exitCode = parent::execute($config);
 			
-			$files = [
-				'AuthenticationController.php'  => 'src/Controllers/AuthenticationController.php',
-				'LoginFormValidator.php'        => 'src/Validation/LoginFormValidator.php',
-				'RegistrationFormValidator.php' => 'src/Validation/RegistrationFormValidator.php',
-				'UserEntity.php'                => 'src/Entities/UserEntity.php',
-				'AuthenticationAspect.php'      => 'src/Aspects/AuthenticationAspect.php',
-				'UserCreationException.php'     => 'src/Exceptions/UserCreationException.php',
-				'login.tpl'                     => 'templates/login.tpl',
-				'registration_form.tpl'         => 'templates/registration_form.tpl',
-			];
-			
-			// Check if any files already exist
-			$conflicts = [];
-			foreach ($files as $target) {
-				if (file_exists($target)) {
-					$conflicts[] = $target;
-				}
+			if ($exitCode === 0) {
+				$this->showNextSteps();
 			}
 			
-			if (!empty($conflicts) && !$force) {
-				$this->output->error("The following files already exist:");
-				
-				foreach ($conflicts as $file) {
-					$this->output->writeLn("  - $file");
-				}
-				
-				$this->output->writeLn("");
-				$this->output->writeLn("Use --force to overwrite existing files.");
-				return 1;
-			}
-			
-			// Copy files
-			$copied = 0;
-			
-			foreach ($files as $stub => $target) {
-				$source = $stubPath . DIRECTORY_SEPARATOR . $stub;
-				
-				if (!file_exists($source)) {
-					$this->output->error("Stub file not found: $source");
-					return 1;
-				}
-				
-				// Create directory if it doesn't exist
-				$targetDir = dirname($target);
-				
-				if (!is_dir($targetDir)) {
-					mkdir($targetDir, 0755, true);
-				}
-				
-				if (copy($source, $target)) {
-					$this->output->writeLn("  Created: $target");
-					$copied++;
-				} else {
-					$this->output->error("Failed to copy: $target");
-					return 1;
-				}
-			}
-			
-			$this->output->writeLn("");
-			$this->output->success("Authentication system installed ($copied files)");
-			$this->showNextSteps();
-			
-			return 0;
+			return $exitCode;
 		}
 		
 		/**
-		 * Get the path to stub files
-		 * @return string
-		 */
-		private function getStubPath(): string {
-			return dirname(__DIR__, 2) . '/canvas-authorization/assets';
-		}
-		
-		/**
-		 * Show next steps after installation
+		 * Show next steps after successful installation
 		 * @return void
 		 */
 		private function showNextSteps(): void {
