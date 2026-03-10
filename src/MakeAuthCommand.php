@@ -58,7 +58,7 @@
 		 * @return int Exit code (0 = success, 1 = error)
 		 */
 		public function execute(ConfigurationManager $config): int {
-			$this->output->writeLn("<info>Installing Authentication System</info>");
+			$this->output->writeLn("<green>Installing Authentication System</green>");
 			$this->output->writeLn("");
 			
 			$exitCode = parent::execute($config);
@@ -76,15 +76,15 @@
 		 */
 		private function showNextSteps(): void {
 			$this->output->writeLn("");
-			$this->output->writeLn("<info>Next Steps:</info>");
+			$this->output->writeLn("<green>Next Steps:</green>");
 			$this->output->writeLn("");
 			$this->output->writeLn("1. Generate database migration:");
-			$this->output->writeLn("   <comment>php ./vendor/bin/sculpt make:migrations</comment>");
+			$this->output->writeLn("   <yellow>php ./vendor/bin/sculpt make:migrations</yellow>");
 			$this->output->writeLn("");
 			$this->output->writeLn("2. Run the migration:");
-			$this->output->writeLn("   <comment>php ./vendor/bin/sculpt quel:migrate</comment>");
+			$this->output->writeLn("   <yellow>php ./vendor/bin/sculpt quel:migrate</yellow>");
 			$this->output->writeLn("");
 			$this->output->writeLn("3. Apply authentication to your controllers:");
-			$this->output->writeLn("   <comment>@InterceptWith(App\\Aspects\\AuthenticationAspect::class)</comment>");
+			$this->output->writeLn("   <yellow>@InterceptWith(App\\Aspects\\AuthenticationAspect::class)</yellow>");
 		}
 	}
