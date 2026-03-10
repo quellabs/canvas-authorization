@@ -67,8 +67,8 @@
 			}
 			
 			// Extract login credentials from the request
-			$username = $request->get('username');
-			$password = $request->get('password');
+			$username = $request->request->get('username');
+			$password = $request->request->get('password');
 			
 			// Look up the user by username
 			$user = $this->findUser($username);
