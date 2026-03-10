@@ -3,9 +3,8 @@
 	namespace Quellabs\CanvasAuthorization;
 	
 	use Quellabs\Sculpt\Application;
-	use Quellabs\Sculpt\ServiceProvider;
 	
-	class AuthProvider extends ServiceProvider {
+	class ServiceProvider extends \Quellabs\Sculpt\ServiceProvider {
 		
 		public function register(Application $application): void {
 			// Register the commands into the Sculpt application
