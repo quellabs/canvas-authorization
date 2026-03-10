@@ -8,6 +8,7 @@
 	use Quellabs\ObjectQuel\Annotations\Orm\OneToOne;
 	use Quellabs\ObjectQuel\Annotations\Orm\PrimaryKeyStrategy;
 	use Quellabs\ObjectQuel\Annotations\Orm\Table;
+	use Quellabs\ObjectQuel\Annotations\Orm\Index;
 	use Quellabs\ObjectQuel\Collections\Collection;
 	use Quellabs\ObjectQuel\Collections\CollectionInterface;
 	
