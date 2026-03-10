@@ -28,7 +28,9 @@
 				return new RedirectResponse('/');
 			}
 			
-			return $this->render('login.tpl');
+			return $this->render('login.{{ template_ext }}', [
+				'errors' => []
+			]);
 		}
 		
 		/**
@@ -49,7 +51,7 @@
 		 * @throws TemplateRenderException
 		 */
 		public function registration(): Response {
-			return $this->render('registration_form.tpl');
+			return $this->render('registration_form.{{ template_ext }}');
 		}
 		
 		/**
@@ -63,12 +65,14 @@
 		public function processLogin(Request $request): Response {
 			// Check if form validation passed - if not, return to login form with validation errors
 			if (!$request->attributes->get('validation_passed', true)) {
-				return $this->render('login.tpl', ['errors' => $request->attributes->get('validation_errors', [])]);
+				return $this->render('login.{{ template_ext }}', [
+					'errors' => $request->attributes->get('validation_errors', [])
+				]);
 			}
 			
 			// Extract login credentials from the request
-			$username = $request->get('username');
-			$password = $request->get('password');
+			$username = $request->request->get('username');
+			$password = $request->request->get('password');
 			
 			// Look up the user by username
 			$user = $this->findUser($username);
@@ -76,7 +80,11 @@
 			// Verify user exists and password is correct
 			if (!$user || !$this->checkPassword($password, $user)) {
 				// Return to login form with generic error message (avoid revealing whether username or password was wrong)
-				return $this->render('login.tpl', ['errors' => ['general' => ['Invalid username or password.']]]);
+				return $this->render('login.{{ template_ext }}', [
+					'errors' => [
+						'general' => ['Invalid username or password.']
+					]
+				]);
 			}
 			
 			// Authentication successful - store user ID in session
@@ -98,7 +106,9 @@
 			// Check if validation passed from the interceptor
 			// If validation failed, return to form with validation errors
 			if (!$request->attributes->get('validation_passed', true)) {
-				return $this->render('registration_form.tpl', ['errors' => $request->attributes->get('validation_errors', [])]);
+				return $this->render('registration_form.{{ template_ext }}', [
+					'errors' => $request->attributes->get('validation_errors', [])
+				]);
 			}
 			
 			// Extract form data from the request
@@ -109,7 +119,11 @@
 			// Server-side password confirmation check
 			// Ensure both password fields match
 			if ($password !== $confirmPassword) {
-				return $this->render('registration_form.tpl', ['errors' => ['general' => ['Passwords do not match.']]]);
+				return $this->render('registration_form.{{ template_ext }}', [
+					'errors' => [
+						'general' => ['Passwords do not match.']
+					]
+				]);
 			}
 			
 			// Check if username is already taken
@@ -118,8 +132,10 @@
 			
 			if ($user) {
 				// Return error if username already exists
-				return $this->render('registration_form.tpl', [
-					'errors' => ['general' => ['User already exists.']]
+				return $this->render('registration_form.{{ template_ext }}', [
+					'errors' => [
+						'general' => ['User already exists.']
+					]
 				]);
 			}
 			
@@ -135,8 +151,10 @@
 				// Redirect to home page after successful registration
 				return new RedirectResponse('/');
 			} catch (UserCreationException $e) {
-				return $this->render('registration_form.tpl', [
-					'errors' => ['general' => ['Registration failed. Please try again.']]
+				return $this->render('registration_form.{{ template_ext }}', [
+					'errors' => [
+						'general' => ['Registration failed. Please try again.']
+					]
 				]);
 			}
 		}

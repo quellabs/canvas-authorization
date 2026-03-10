@@ -196,23 +196,26 @@
 
     <h1 class="form-title">Create your account</h1>
 
-    {if $errors}
-        <div class="errors-container">
-            {foreach $errors as $field => $field_errors}
-                {foreach $field_errors as $error_message}
+    @if(!empty($errors))
+        <div class="errors-container" id="errorsContainer">
+            @foreach($errors as $field => $field_errors)
+                @foreach($field_errors as $error_message)
                     <div class="error-message">
-                        {if $field == 'general'}
-                            {$error_message}
-                        {else}
-                            <strong>{$field|capitalize}:</strong> {$error_message}
-                        {/if}
+                        @if($field === 'general')
+                            {{ $error_message }}
+                        @else
+                            <strong>{{ ucfirst($field) }}:</strong> {{ $error_message }}
+                        @endif
                     </div>
-                {/foreach}
-            {/foreach}
+                @endforeach
+            @endforeach
         </div>
-    {/if}
+    @else
+        <div class="errors-container" id="errorsContainer" style="display:none"></div>
+    @endif
 
     <form action="/register" method="post" id="registerForm">
+        @csrf
         <div class="form-group">
             <label for="name" class="form-label">Full name</label>
             <input type="text"
@@ -220,7 +223,7 @@
                    name="name"
                    class="form-input"
                    placeholder="Enter your full name"
-                   value="{$smarty.post.name|default:""}"
+                   value="{{ old('name') }}"
                    required>
         </div>
 
@@ -231,7 +234,7 @@
                    name="username"
                    class="form-input"
                    placeholder="Enter your email address"
-                   value="{$smarty.post.username|default:""}"
+                   value="{{ old('username') }}"
                    required>
         </div>
 
@@ -271,29 +274,25 @@
 </div>
 
 <script>
-    // Basic form validation
     document.getElementById('registerForm').addEventListener('submit', function(e) {
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
         const errorsContainer = document.getElementById('errorsContainer');
 
-        // Clear previous errors
+        // Clear previous client-side errors
         errorsContainer.innerHTML = '';
         errorsContainer.style.display = 'none';
 
         let errors = [];
 
-        // Check password length
         if (password.length < 8) {
             errors.push('Password must be at least 8 characters long');
         }
 
-        // Check password match
         if (password !== confirmPassword) {
             errors.push('Passwords do not match');
         }
 
-        // Display errors if any
         if (errors.length > 0) {
             e.preventDefault();
             errors.forEach(error => {
