@@ -47,8 +47,8 @@
 				'Entities/UserEntity.php'                      => 'src/Entities/UserEntity.php',
 				'Aspects/AuthenticationAspect.php'             => 'src/Aspects/AuthenticationAspect.php',
 				'Exceptions/UserCreationException.php'         => 'src/Exceptions/UserCreationException.php',
-				"{$engine}/templates/login.{$ext}"             => "templates/login.{$ext}",
-				"{$engine}/templates/registration_form.{$ext}" => "templates/registration_form.{$ext}",
+				"/templates/{$engine}/login.{$ext}"             => "templates/login.{$ext}",
+				"/templates/{$engine}/registration_form.{$ext}" => "templates/registration_form.{$ext}",
 			];
 		}
 		
