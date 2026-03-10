@@ -12,7 +12,7 @@
 		 * @return string
 		 */
 		public function getSignature(): string {
-			return "make:auth";
+			return "install:auth";
 		}
 		
 		/**
