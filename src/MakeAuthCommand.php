@@ -8,6 +8,26 @@
 	class MakeAuthCommand extends StubCommand {
 		
 		/**
+		 * Returns token list
+		 * @return array|string[]
+		 */
+		protected function getTokens(): array {
+			$templateExtensions = [
+				'smarty' => 'tpl',
+				'blade'  => 'blade.php',
+				'latte'  => 'latte',
+				'php'    => 'php',
+				'twig'   => 'twig',
+			];
+			
+			$ext = $templateExtensions[$this->resolveTemplateEngine()] ?? 'tpl';
+			
+			return array_merge(parent::getTokens(), [
+				'{{ template_ext }}' => $ext,
+			]);
+		}
+		
+		/**
 		 * Returns the signature of this command
 		 * @return string
 		 */
