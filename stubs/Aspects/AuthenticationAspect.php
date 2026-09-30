@@ -3,8 +3,8 @@
 	namespace App\Aspects;
 	
 	use App\Entities\UserEntity;
-	use Quellabs\Contracts\AOP\BeforeAspect;
-	use Quellabs\Contracts\AOP\MethodContext;
+	use Quellabs\Canvas\AOP\Contracts\BeforeAspectInterface;
+	use Quellabs\Canvas\Routing\Contracts\MethodContextInterface;
 	use Quellabs\ObjectQuel\EntityManager;
 	use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 	use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -13,7 +13,7 @@
 	/**
 	 * Authentication aspect that intercepts method calls to check if user is authenticated.
 	 *
-	 * This aspect implements the BeforeAspect interface to run authentication checks
+	 * This aspect implements the BeforeAspectInterface to run authentication checks
 	 * before the target method is executed. It provides session-based authentication
 	 * with periodic database validation to ensure users haven't been banned or deleted.
 	 *
@@ -21,7 +21,7 @@
 	 * 1. Quick session check for every request
 	 * 2. Database validation at configured intervals to verify user status
 	 */
-	class AuthenticationAspect implements BeforeAspect {
+	class AuthenticationAspect implements BeforeAspectInterface {
 		
 		/**
 		 * The URL to redirect unauthenticated users to
@@ -62,11 +62,11 @@
 		
 		/**
 		 * Execute authentication check before the target method runs
-		 * @param MethodContext $context The context containing request and method information
+		 * @param MethodContextInterface $context The context containing request and method information
 		 * @return Response|null Returns RedirectResponse if authentication fails, null if authenticated
 		 * @throws SessionNotFoundException When session cannot be retrieved from request
 		 */
-		public function before(MethodContext $context): ?Response {
+		public function before(MethodContextInterface $context): ?Response {
 			// Extract the HTTP request from the method context
 			$request = $context->getRequest();
 			
