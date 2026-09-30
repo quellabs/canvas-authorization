@@ -2,6 +2,7 @@
 	
 	namespace App\Entities;
 	
+	use Quellabs\CanvasAuthorization\Contracts\RevalidatableUserInterface;
 	use Quellabs\ObjectQuel\Annotations\Orm\Column;
 	use Quellabs\ObjectQuel\Annotations\Orm\ManyToOne;
 	use Quellabs\ObjectQuel\Annotations\Orm\OneToMany;
@@ -11,12 +12,12 @@
 	use Quellabs\ObjectQuel\Annotations\Orm\Index;
 	use Quellabs\ObjectQuel\Collections\Collection;
 	use Quellabs\ObjectQuel\Collections\CollectionInterface;
-	
+
 	/**
 	 * @Orm\Index(name="idx_username", columns={"username"})
 	 * @Orm\Table(name="users")
 	 */
-	class UserEntity {
+	class UserEntity implements RevalidatableUserInterface {
 		
 		/**
 		 * @Orm\Column(name="id", type="integer", unsigned=true, primary_key=true)

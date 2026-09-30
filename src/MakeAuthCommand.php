@@ -65,7 +65,6 @@
 				'Validation/LoginFormValidator.php'            => 'src/Validation/LoginFormValidator.php',
 				'Validation/RegistrationFormValidator.php'     => 'src/Validation/RegistrationFormValidator.php',
 				'Entities/UserEntity.php'                      => 'src/Entities/UserEntity.php',
-				'Aspects/UserRevalidationAspect.php'           => 'src/Aspects/UserRevalidationAspect.php',
 				'Exceptions/UserCreationException.php'         => 'src/Exceptions/UserCreationException.php',
 				"/templates/{$engine}/login.{$ext}"             => "templates/login.{$ext}",
 				"/templates/{$engine}/registration_form.{$ext}" => "templates/registration_form.{$ext}",
@@ -106,6 +105,10 @@
 			$this->output->writeLn("");
 			$this->output->writeLn("3. Apply authentication to your controllers (order matters):");
 			$this->output->writeLn("   <yellow>@InterceptWith(Quellabs\\Canvas\\Security\\SessionAuthenticationAspect::class)</yellow>");
-			$this->output->writeLn("   <yellow>@InterceptWith(App\\Aspects\\UserRevalidationAspect::class)</yellow>");
+			$this->output->writeLn("   <yellow>@InterceptWith(Quellabs\\CanvasAuthorization\\UserRevalidationAspect::class, userEntityClass=App\\Entities\\UserEntity::class)</yellow>");
+			$this->output->writeLn("");
+			$this->output->writeLn("   Need to customize the revalidation logic beyond what UserRevalidationAspect");
+			$this->output->writeLn("   exposes? Eject a local, fully editable copy instead:");
+			$this->output->writeLn("   <yellow>php ./vendor/bin/sculpt make:auth-aspect</yellow>");
 		}
 	}
