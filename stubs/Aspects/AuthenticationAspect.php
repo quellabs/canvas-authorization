@@ -75,15 +75,15 @@
 			$session = $request->getSession();
 			
 			// STAGE 1: Quick session-based authentication check
-			// Check if the user is logged in by verifying the presence and value of user_id in session
-			if (!$session->has('user_id') || !$session->get('user_id')) {
+			// Check if the user is logged in by verifying the presence and value of auth_user_id in session
+			if (!$session->has('auth_user_id') || !$session->get('auth_user_id')) {
 				// User is not authenticated - redirect them to the login page
 				return new RedirectResponse($this->redirectTo);
 			}
 			
 			// STAGE 2: Periodic database validation to ensure user is still valid
 			// Only hit the database if we haven't validated recently to improve performance
-			$userId = $session->get('user_id');
+			$userId = $session->get('auth_user_id');
 			$lastValidated = $session->get('user_validated_at', 0); // Default to 0 if never validated
 			$currentTime = time();
 			
@@ -95,7 +95,7 @@
 				// Check if user still exists and is not banned
 				if (!$user || $user->isBanned()) {
 					// User no longer exists or has been banned - clear session and redirect
-					$session->remove('user_id');
+					$session->remove('auth_user_id');
 					$session->remove('user_validated_at');
 					return new RedirectResponse($this->redirectTo);
 				}
