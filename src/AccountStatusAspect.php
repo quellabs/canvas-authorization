@@ -1,10 +1,10 @@
 <?php
 
-	namespace App\Aspects;
+	namespace Quellabs\CanvasAuthorization;
 
-	use App\Entities\UserEntity;
 	use Quellabs\Canvas\AOP\Contracts\BeforeAspectInterface;
 	use Quellabs\Canvas\Routing\Contracts\MethodContextInterface;
+	use Quellabs\CanvasAuthorization\Contracts\AccountStatusInterface;
 	use Quellabs\ObjectQuel\EntityManager;
 	use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 	use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -22,10 +22,25 @@
 	 * confirming the user hasn't been banned or deleted since login, at most
 	 * once per $validationInterval to avoid a database hit on every request.
 	 *
+	 * Unlike a scaffolded stub, this class is used directly from the package —
+	 * it is not copied into the application, so it receives fixes via
+	 * `composer update` rather than being frozen at generation time. Only the
+	 * user entity needs to be application-owned, via $userEntityClass and
+	 * AccountStatusInterface. An application that needs a fundamentally
+	 * different revalidation strategy than "banned via an interface method"
+	 * should eject a copy with `sculpt make:auth-aspect` and edit it directly.
+	 *
 	 * @InterceptWith(Quellabs\Canvas\Security\SessionAuthenticationAspect::class)
-	 * @InterceptWith(App\Aspects\UserRevalidationAspect::class)
+	 * @InterceptWith(Quellabs\CanvasAuthorization\AccountStatusAspect::class, userEntityClass=App\Entities\UserEntity::class)
 	 */
-	class UserRevalidationAspect implements BeforeAspectInterface {
+	class AccountStatusAspect implements BeforeAspectInterface {
+
+		/**
+		 * Fully qualified class name of the application's user entity.
+		 * Must implement AccountStatusInterface.
+		 * @var class-string<AccountStatusInterface>
+		 */
+		private string $userEntityClass;
 
 		/**
 		 * The URL to redirect to when there is no session or the user is no longer valid
@@ -49,16 +64,28 @@
 		private ?EntityManager $entityManager;
 
 		/**
-		 * Constructor to initialize the user revalidation aspect
+		 * Constructor to initialize the account status aspect
+		 * @param class-string<AccountStatusInterface> $userEntityClass The application's user entity class, must implement AccountStatusInterface
 		 * @param string $redirectTo The URL to redirect to when validation fails (defaults to "/login")
 		 * @param int $validationInterval Time in seconds between database validations (defaults to 300 = 5 minutes)
 		 * @param EntityManager|null $entityManager The entity manager for database operations
 		 */
 		public function __construct(
+			string $userEntityClass,
 			string $redirectTo = "/login",
 			int $validationInterval = 300,
 			?EntityManager $entityManager = null
 		) {
+			// Fail at construction rather than on first request — a class that doesn't
+			// implement the interface would only surface as an unexplained fatal error
+			// deep inside before() the first time a user is actually re-validated
+			if (!is_subclass_of($userEntityClass, AccountStatusInterface::class)) {
+				throw new \InvalidArgumentException(
+					"userEntityClass '{$userEntityClass}' must implement " . AccountStatusInterface::class . "."
+				);
+			}
+
+			$this->userEntityClass = $userEntityClass;
 			$this->redirectTo = $redirectTo;
 			$this->validationInterval = $validationInterval;
 			$this->entityManager = $entityManager;
@@ -89,7 +116,8 @@
 			$currentTime = time();
 
 			if ($currentTime - $lastValidated > $this->validationInterval) {
-				$user = $this->entityManager->find(UserEntity::class, $userId);
+				/** @var AccountStatusInterface|null $user */
+				$user = $this->entityManager->find($this->userEntityClass, $userId);
 
 				if (!$user || $user->isBanned()) {
 					// User no longer exists or has been banned - clear the session and redirect

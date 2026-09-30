@@ -4,9 +4,9 @@
 
 	/**
 	 * Implemented by an application's user entity to make it usable with
-	 * UserRevalidationAspect's periodic database re-check.
+	 * AccountStatusAspect's periodic database re-check.
 	 */
-	interface RevalidatableUserInterface {
+	interface AccountStatusInterface {
 
 		/**
 		 * Whether this user has been banned and should be logged out.

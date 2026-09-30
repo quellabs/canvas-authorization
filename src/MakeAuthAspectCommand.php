@@ -6,9 +6,9 @@
 	use Quellabs\Sculpt\Contracts\StubCommand;
 
 	/**
-	 * Ejects a local, fully editable copy of UserRevalidationAspect into the
-	 * application. Only needed when Quellabs\CanvasAuthorization\UserRevalidationAspect's
-	 * constructor parameters and RevalidatableUserInterface aren't enough to express
+	 * Ejects a local, fully editable copy of AccountStatusAspect into the
+	 * application. Only needed when Quellabs\CanvasAuthorization\AccountStatusAspect's
+	 * constructor parameters and AccountStatusInterface aren't enough to express
 	 * the desired revalidation behavior — most applications should use that class
 	 * directly instead of running this command.
 	 */
@@ -36,7 +36,7 @@
 		 */
 		protected function getStubs(): array {
 			return [
-				'Aspects/UserRevalidationAspect.php' => 'src/Aspects/UserRevalidationAspect.php',
+				'Aspects/AccountStatusAspect.php' => 'src/Aspects/AccountStatusAspect.php',
 			];
 		}
 
@@ -46,7 +46,7 @@
 		 * @return int Exit code (0 = success, 1 = error)
 		 */
 		public function execute(ConfigurationManager $config): int {
-			$this->output->writeLn("<green>Ejecting UserRevalidationAspect</green>");
+			$this->output->writeLn("<green>Ejecting AccountStatusAspect</green>");
 			$this->output->writeLn("");
 
 			$exitCode = parent::execute($config);
@@ -56,7 +56,7 @@
 				$this->output->writeLn("<green>Next Steps:</green>");
 				$this->output->writeLn("");
 				$this->output->writeLn("Point your controllers at the ejected copy instead of the package class:");
-				$this->output->writeLn("   <yellow>@InterceptWith(App\\Aspects\\UserRevalidationAspect::class)</yellow>");
+				$this->output->writeLn("   <yellow>@InterceptWith(App\\Aspects\\AccountStatusAspect::class)</yellow>");
 				$this->output->writeLn("");
 				$this->output->writeLn("It is now your code — edit its before() method freely. It no longer");
 				$this->output->writeLn("receives fixes or changes from quellabs/canvas-authorization.");
