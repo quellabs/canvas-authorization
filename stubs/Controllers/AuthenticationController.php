@@ -91,7 +91,7 @@
 			$session = $request->getSession();
 			$session->set('auth_user_id', $user->getId());
 
-			// Record when and how this credential was proven, so RecentAuthenticationAspect
+			// Record when and how this credential was proven, so StepUpAuthenticationAspect
 			// can require a recent login for sensitive actions elsewhere in the app
 			$session->set('auth_time', time());
 			$session->set('auth_methods', ['pwd']);

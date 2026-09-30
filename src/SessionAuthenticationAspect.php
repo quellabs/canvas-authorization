@@ -24,7 +24,7 @@
 	 * On success, publishes 'session_user_id', 'auth_time', and 'auth_methods' on
 	 * $request->attributes — the same 'auth_time'/'auth_methods' contract
 	 * Quellabs\Canvas\Security\JwtAuthenticationAspect publishes, so
-	 * Quellabs\Canvas\Security\RecentAuthenticationAspect works unmodified against
+	 * Quellabs\Canvas\Security\StepUpAuthenticationAspect works unmodified against
 	 * either authenticator.
 	 *
 	 * Supports two failure modes, selectable via throwOnFailure:
@@ -87,7 +87,7 @@
 			}
 
 			// Session is authenticated — publish the user id and, when present, the
-			// auth-mechanism-agnostic freshness attributes consumed by RecentAuthenticationAspect
+			// auth-mechanism-agnostic freshness attributes consumed by StepUpAuthenticationAspect
 			$request->attributes->set('session_user_id', $userId);
 
 			$authTime = $session->get('auth_time');

@@ -13,7 +13,7 @@
 	 * every subclass, so individual controllers never need to declare these
 	 * two aspects themselves. A genuinely sensitive action (e.g. deleting the
 	 * account) can still add a further, stricter check at the method level —
-	 * see Quellabs\Canvas\Security\RecentAuthenticationAspect.
+	 * see Quellabs\Canvas\Security\StepUpAuthenticationAspect.
 	 *
 	 * throwOnFailure=true on both: neither aspect builds a Response itself —
 	 * install:auth also scaffolds AuthErrorHandler (src/Errors/AuthErrorHandler.php),
