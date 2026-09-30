@@ -4,9 +4,9 @@
 
 	/**
 	 * Implemented by an application's user entity to make it usable with
-	 * AccountStatusAspect's periodic database re-check.
+	 * AccountEligibilityAspect's periodic database re-check.
 	 */
-	interface AccountStatusInterface {
+	interface AccountEligibilityInterface {
 
 		/**
 		 * Whether this user has been banned and should be logged out.

@@ -2,7 +2,7 @@
 	
 	namespace App\Entities;
 	
-	use Quellabs\CanvasAuthorization\Contracts\AccountStatusInterface;
+	use Quellabs\CanvasAuthorization\Contracts\AccountEligibilityInterface;
 	use Quellabs\ObjectQuel\Annotations\Orm\Column;
 	use Quellabs\ObjectQuel\Annotations\Orm\ManyToOne;
 	use Quellabs\ObjectQuel\Annotations\Orm\OneToMany;
@@ -17,7 +17,7 @@
 	 * @Orm\Index(name="idx_username", columns={"username"})
 	 * @Orm\Table(name="users")
 	 */
-	class UserEntity implements AccountStatusInterface {
+	class UserEntity implements AccountEligibilityInterface {
 		
 		/**
 		 * @Orm\Column(name="id", type="integer", unsigned=true, primary_key=true)

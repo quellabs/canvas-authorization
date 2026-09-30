@@ -105,9 +105,9 @@
 			$this->output->writeLn("");
 			$this->output->writeLn("3. Apply authentication to your controllers (order matters):");
 			$this->output->writeLn("   <yellow>@InterceptWith(Quellabs\\Canvas\\Security\\SessionAuthenticationAspect::class)</yellow>");
-			$this->output->writeLn("   <yellow>@InterceptWith(Quellabs\\CanvasAuthorization\\AccountStatusAspect::class, userEntityClass=App\\Entities\\UserEntity::class)</yellow>");
+			$this->output->writeLn("   <yellow>@InterceptWith(Quellabs\\CanvasAuthorization\\AccountEligibilityAspect::class, userEntityClass=App\\Entities\\UserEntity::class)</yellow>");
 			$this->output->writeLn("");
-			$this->output->writeLn("   Need to customize the revalidation logic beyond what AccountStatusAspect");
+			$this->output->writeLn("   Need to customize the revalidation logic beyond what AccountEligibilityAspect");
 			$this->output->writeLn("   exposes? Eject a local, fully editable copy instead:");
 			$this->output->writeLn("   <yellow>php ./vendor/bin/sculpt make:auth-aspect</yellow>");
 		}
