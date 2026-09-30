@@ -15,7 +15,7 @@
 	 * account) can still add a further, stricter check at the method level —
 	 * see Quellabs\Canvas\Security\RecentAuthenticationAspect.
 	 *
-	 * @InterceptWith(Quellabs\Canvas\Security\SessionAuthenticationAspect::class)
+	 * @InterceptWith(Quellabs\CanvasAuthorization\SessionAuthenticationAspect::class)
 	 * @InterceptWith(Quellabs\CanvasAuthorization\AccountEligibilityAspect::class, userEntityClass=App\Entities\UserEntity::class)
 	 */
 	abstract class AuthenticatedController extends BaseController {

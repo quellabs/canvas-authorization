@@ -16,13 +16,13 @@
 	 * longer valid.
 	 *
 	 * This aspect does not perform the base session check itself — chain it
-	 * after Quellabs\Canvas\Security\SessionAuthenticationAspect, which reads
+	 * after Quellabs\CanvasAuthorization\SessionAuthenticationAspect, which reads
 	 * 'auth_user_id' from the session and publishes 'session_user_id' on the
 	 * request. This aspect only adds the database-backed, app-specific part:
 	 * confirming the user hasn't been banned or deleted since login, at most
 	 * once per $validationInterval to avoid a database hit on every request.
 	 *
-	 * @InterceptWith(Quellabs\Canvas\Security\SessionAuthenticationAspect::class)
+	 * @InterceptWith(Quellabs\CanvasAuthorization\SessionAuthenticationAspect::class)
 	 * @InterceptWith(App\Aspects\AccountEligibilityAspect::class)
 	 */
 	class AccountEligibilityAspect implements BeforeAspectInterface {

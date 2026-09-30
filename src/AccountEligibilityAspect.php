@@ -16,7 +16,7 @@
 	 * longer valid.
 	 *
 	 * This aspect does not perform the base session check itself — chain it
-	 * after Quellabs\Canvas\Security\SessionAuthenticationAspect, which reads
+	 * after Quellabs\CanvasAuthorization\SessionAuthenticationAspect, which reads
 	 * 'auth_user_id' from the session and publishes 'session_user_id' on the
 	 * request. This aspect only adds the database-backed, app-specific part:
 	 * confirming the user hasn't been banned or deleted since login, at most
@@ -30,7 +30,7 @@
 	 * different revalidation strategy than "banned via an interface method"
 	 * should eject a copy with `sculpt make:auth-aspect` and edit it directly.
 	 *
-	 * @InterceptWith(Quellabs\Canvas\Security\SessionAuthenticationAspect::class)
+	 * @InterceptWith(Quellabs\CanvasAuthorization\SessionAuthenticationAspect::class)
 	 * @InterceptWith(Quellabs\CanvasAuthorization\AccountEligibilityAspect::class, userEntityClass=App\Entities\UserEntity::class)
 	 */
 	class AccountEligibilityAspect implements BeforeAspectInterface {
