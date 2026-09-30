@@ -56,7 +56,7 @@
 				$this->output->writeLn("<green>Next Steps:</green>");
 				$this->output->writeLn("");
 				$this->output->writeLn("Point your controllers at the ejected copy instead of the package class:");
-				$this->output->writeLn("   <yellow>@InterceptWith(App\\Aspects\\AccountEligibilityAspect::class)</yellow>");
+				$this->output->writeLn("   <yellow>@InterceptWith(App\\Aspects\\AccountEligibilityAspect::class, throwOnFailure=true)</yellow>");
 				$this->output->writeLn("");
 				$this->output->writeLn("It is now your code — edit its before() method freely. It no longer");
 				$this->output->writeLn("receives fixes or changes from quellabs/canvas-authorization.");

@@ -5,15 +5,13 @@
 	use App\Entities\UserEntity;
 	use Quellabs\Canvas\AOP\Contracts\BeforeAspectInterface;
 	use Quellabs\Canvas\Routing\Contracts\MethodContextInterface;
+	use Quellabs\CanvasAuthorization\Exceptions\AccountEligibilityException;
 	use Quellabs\ObjectQuel\EntityManager;
-	use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
-	use Symfony\Component\HttpFoundation\RedirectResponse;
+	use Symfony\Component\HttpFoundation\Request;
 	use Symfony\Component\HttpFoundation\Response;
 
 	/**
-	 * Periodically re-validates the logged-in user against the database, and
-	 * redirects to the login page when there is no session or the user is no
-	 * longer valid.
+	 * Periodically re-validates the logged-in user against the database.
 	 *
 	 * This aspect does not perform the base session check itself — chain it
 	 * after Quellabs\CanvasAuthorization\SessionAuthenticationAspect, which reads
@@ -22,16 +20,16 @@
 	 * confirming the user hasn't been banned or deleted since login, at most
 	 * once per $validationInterval to avoid a database hit on every request.
 	 *
-	 * @InterceptWith(Quellabs\CanvasAuthorization\SessionAuthenticationAspect::class)
-	 * @InterceptWith(App\Aspects\AccountEligibilityAspect::class)
+	 * Like every other authentication aspect in this ecosystem, it never builds
+	 * a Response itself — it only sets a request attribute or throws. Register
+	 * an ErrorHandlerInterface (e.g. install:auth's scaffolded AuthErrorHandler)
+	 * to turn a thrown AccountEligibilityException into a redirect or JSON
+	 * response; that's what actually protects a page, not this aspect.
+	 *
+	 * @InterceptWith(Quellabs\CanvasAuthorization\SessionAuthenticationAspect::class, throwOnFailure=true)
+	 * @InterceptWith(App\Aspects\AccountEligibilityAspect::class, throwOnFailure=true)
 	 */
 	class AccountEligibilityAspect implements BeforeAspectInterface {
-
-		/**
-		 * The URL to redirect to when there is no session or the user is no longer valid
-		 * @var string
-		 */
-		private string $redirectTo;
 
 		/**
 		 * Time interval (in seconds) between database re-checks of account eligibility
@@ -42,6 +40,12 @@
 		private int $validationInterval;
 
 		/**
+		 * If true, throws AccountEligibilityException instead of writing to request attributes
+		 * @var bool
+		 */
+		private bool $throwOnFailure;
+
+		/**
 		 * ObjectQuel EntityManager for database operations
 		 * Used to fetch and validate user entities from the database
 		 * @var EntityManager|null
@@ -50,25 +54,29 @@
 
 		/**
 		 * Constructor to initialize the account eligibility aspect
-		 * @param string $redirectTo The URL to redirect to when validation fails (defaults to "/login")
 		 * @param int $validationInterval Time in seconds between database validations (defaults to 300 = 5 minutes)
+		 * @param bool $throwOnFailure If true, throws AccountEligibilityException instead of writing to request attributes
 		 * @param EntityManager|null $entityManager The entity manager for database operations
 		 */
 		public function __construct(
-			string $redirectTo = "/login",
-			int $validationInterval = 300,
+			int  $validationInterval = 300,
+			bool $throwOnFailure = false,
 			?EntityManager $entityManager = null
 		) {
-			$this->redirectTo = $redirectTo;
 			$this->validationInterval = $validationInterval;
+			$this->throwOnFailure = $throwOnFailure;
 			$this->entityManager = $entityManager;
 		}
 
 		/**
-		 * Redirect if there's no session, otherwise periodically re-validate the user in the database.
+		 * Check session eligibility and periodically re-validate the user in the database.
+		 *
+		 * On failure in attribute mode: sets 'account_eligibility_error' on $request->attributes, returns null.
+		 * On failure in exception mode: throws AccountEligibilityException.
+		 *
 		 * @param MethodContextInterface $context The context containing request and method information
-		 * @return Response|null Returns RedirectResponse when there is no session or the user is no longer valid, null otherwise
-		 * @throws SessionNotFoundException When session cannot be retrieved from request
+		 * @return Response|null Always null — this aspect never short-circuits via Response.
+		 * @throws AccountEligibilityException When throwOnFailure is true and the account is not eligible.
 		 */
 		public function before(MethodContextInterface $context): ?Response {
 			$request = $context->getRequest();
@@ -79,7 +87,7 @@
 			$userId = $request->attributes->get('session_user_id');
 
 			if ($userId === null) {
-				return new RedirectResponse($this->redirectTo);
+				return $this->fail($request, 'No authenticated session');
 			}
 
 			// Only hit the database if we haven't validated recently, to avoid a
@@ -92,18 +100,35 @@
 				$user = $this->entityManager->find(UserEntity::class, $userId);
 
 				if (!$user || $user->isBanned()) {
-					// User no longer exists or has been banned - clear the session and redirect
+					// User no longer exists or has been banned - clear the session
 					$session->remove('auth_user_id');
 					$session->remove('auth_time');
 					$session->remove('auth_methods');
 					$session->remove('user_validated_at');
-					return new RedirectResponse($this->redirectTo);
+					return $this->fail($request, 'Account is no longer eligible');
 				}
 
 				// User is valid - update the validation timestamp to avoid immediate re-validation
 				$session->set('user_validated_at', $currentTime);
 			}
 
+			$request->attributes->remove('account_eligibility_error');
+			return null;
+		}
+
+		/**
+		 * Report an eligibility failure via the configured failure mode.
+		 * @param Request $request
+		 * @param string $reason Reason the account is not eligible
+		 * @return null Always null — attribute mode never short-circuits via Response.
+		 * @throws AccountEligibilityException When throwOnFailure is true.
+		 */
+		private function fail(Request $request, string $reason): ?Response {
+			if ($this->throwOnFailure) {
+				throw new AccountEligibilityException($reason);
+			}
+
+			$request->attributes->set('account_eligibility_error', $reason);
 			return null;
 		}
 	}

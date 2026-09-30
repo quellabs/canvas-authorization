@@ -15,8 +15,12 @@
 	 * account) can still add a further, stricter check at the method level —
 	 * see Quellabs\Canvas\Security\RecentAuthenticationAspect.
 	 *
-	 * @InterceptWith(Quellabs\CanvasAuthorization\SessionAuthenticationAspect::class)
-	 * @InterceptWith(Quellabs\CanvasAuthorization\AccountEligibilityAspect::class, userEntityClass=App\Entities\UserEntity::class)
+	 * throwOnFailure=true on both: neither aspect builds a Response itself —
+	 * install:auth also scaffolds AuthErrorHandler (src/Errors/AuthErrorHandler.php),
+	 * which is what actually turns a failure into a redirect to the login page.
+	 *
+	 * @InterceptWith(Quellabs\CanvasAuthorization\SessionAuthenticationAspect::class, throwOnFailure=true)
+	 * @InterceptWith(Quellabs\CanvasAuthorization\AccountEligibilityAspect::class, userEntityClass=App\Entities\UserEntity::class, throwOnFailure=true)
 	 */
 	abstract class AuthenticatedController extends BaseController {
 	}

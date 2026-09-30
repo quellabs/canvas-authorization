@@ -67,6 +67,7 @@
 				'Validation/RegistrationFormValidator.php'     => 'src/Validation/RegistrationFormValidator.php',
 				'Entities/UserEntity.php'                      => 'src/Entities/UserEntity.php',
 				'Exceptions/UserCreationException.php'         => 'src/Exceptions/UserCreationException.php',
+				'Errors/AuthErrorHandler.php'                  => 'src/Errors/AuthErrorHandler.php',
 				"/templates/{$engine}/login.{$ext}"             => "templates/login.{$ext}",
 				"/templates/{$engine}/registration_form.{$ext}" => "templates/registration_form.{$ext}",
 			];
@@ -107,8 +108,9 @@
 			$this->output->writeLn("3. Protect a controller by extending AuthenticatedController instead of BaseController:");
 			$this->output->writeLn("   <yellow>class DashboardController extends App\\Controllers\\AuthenticatedController</yellow>");
 			$this->output->writeLn("");
-			$this->output->writeLn("   This applies session and account-eligibility checks to every action in it —");
-			$this->output->writeLn("   see src/Controllers/AuthenticatedController.php.");
+			$this->output->writeLn("   This applies session and account-eligibility checks to every action in it.");
+			$this->output->writeLn("   Both aspects throw rather than redirect — src/Errors/AuthErrorHandler.php is");
+			$this->output->writeLn("   what turns a failure into a redirect to /login; edit it if your login route differs.");
 			$this->output->writeLn("");
 			$this->output->writeLn("   Need to customize the revalidation logic beyond what AccountEligibilityAspect");
 			$this->output->writeLn("   exposes? Eject a local, fully editable copy instead:");

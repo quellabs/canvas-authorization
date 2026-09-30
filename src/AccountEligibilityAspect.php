@@ -5,15 +5,13 @@
 	use Quellabs\Canvas\AOP\Contracts\BeforeAspectInterface;
 	use Quellabs\Canvas\Routing\Contracts\MethodContextInterface;
 	use Quellabs\CanvasAuthorization\Contracts\AccountEligibilityInterface;
+	use Quellabs\CanvasAuthorization\Exceptions\AccountEligibilityException;
 	use Quellabs\ObjectQuel\EntityManager;
-	use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
-	use Symfony\Component\HttpFoundation\RedirectResponse;
+	use Symfony\Component\HttpFoundation\Request;
 	use Symfony\Component\HttpFoundation\Response;
 
 	/**
-	 * Periodically re-validates the logged-in user against the database, and
-	 * redirects to the login page when there is no session or the user is no
-	 * longer valid.
+	 * Periodically re-validates the logged-in user against the database.
 	 *
 	 * This aspect does not perform the base session check itself — chain it
 	 * after Quellabs\CanvasAuthorization\SessionAuthenticationAspect, which reads
@@ -21,6 +19,20 @@
 	 * request. This aspect only adds the database-backed, app-specific part:
 	 * confirming the user hasn't been banned or deleted since login, at most
 	 * once per $validationInterval to avoid a database hit on every request.
+	 *
+	 * Like every other authentication aspect in this ecosystem, it never
+	 * builds a Response itself — it only sets a request attribute or throws:
+	 *
+	 * - Attribute mode (default): on failure, sets 'account_eligibility_error'
+	 *   on $request->attributes and returns null, letting the controller decide
+	 *   how to respond.
+	 *
+	 * - Exception mode (throwOnFailure=true): throws AccountEligibilityException,
+	 *   which propagates to the kernel's error handler. install:auth scaffolds
+	 *   an AuthErrorHandler (src/Errors/AuthErrorHandler.php) that turns this,
+	 *   along with SessionAuthenticationException, into a redirect to the login
+	 *   page — that's what actually protects a page when using
+	 *   AuthenticatedController, not anything built into this aspect.
 	 *
 	 * Unlike a scaffolded stub, this class is used directly from the package —
 	 * it is not copied into the application, so it receives fixes via
@@ -30,8 +42,8 @@
 	 * different revalidation strategy than "banned via an interface method"
 	 * should eject a copy with `sculpt make:auth-aspect` and edit it directly.
 	 *
-	 * @InterceptWith(Quellabs\CanvasAuthorization\SessionAuthenticationAspect::class)
-	 * @InterceptWith(Quellabs\CanvasAuthorization\AccountEligibilityAspect::class, userEntityClass=App\Entities\UserEntity::class)
+	 * @InterceptWith(Quellabs\CanvasAuthorization\SessionAuthenticationAspect::class, throwOnFailure=true)
+	 * @InterceptWith(Quellabs\CanvasAuthorization\AccountEligibilityAspect::class, userEntityClass=App\Entities\UserEntity::class, throwOnFailure=true)
 	 */
 	class AccountEligibilityAspect implements BeforeAspectInterface {
 
@@ -43,18 +55,18 @@
 		private string $userEntityClass;
 
 		/**
-		 * The URL to redirect to when there is no session or the user is no longer valid
-		 * @var string
-		 */
-		private string $redirectTo;
-
-		/**
 		 * Time interval (in seconds) between database re-checks of account eligibility
 		 * This prevents hitting the database on every request while still ensuring
 		 * banned or deleted users are eventually logged out
 		 * @var int
 		 */
 		private int $validationInterval;
+
+		/**
+		 * If true, throws AccountEligibilityException instead of writing to request attributes
+		 * @var bool
+		 */
+		private bool $throwOnFailure;
 
 		/**
 		 * ObjectQuel EntityManager for database operations
@@ -66,14 +78,14 @@
 		/**
 		 * Constructor to initialize the account eligibility aspect
 		 * @param class-string<AccountEligibilityInterface> $userEntityClass The application's user entity class, must implement AccountEligibilityInterface
-		 * @param string $redirectTo The URL to redirect to when validation fails (defaults to "/login")
 		 * @param int $validationInterval Time in seconds between database validations (defaults to 300 = 5 minutes)
+		 * @param bool $throwOnFailure If true, throws AccountEligibilityException instead of writing to request attributes
 		 * @param EntityManager|null $entityManager The entity manager for database operations
 		 */
 		public function __construct(
 			string $userEntityClass,
-			string $redirectTo = "/login",
-			int $validationInterval = 300,
+			int    $validationInterval = 300,
+			bool   $throwOnFailure = false,
 			?EntityManager $entityManager = null
 		) {
 			// Fail at construction rather than on first request — a class that doesn't
@@ -86,16 +98,20 @@
 			}
 
 			$this->userEntityClass = $userEntityClass;
-			$this->redirectTo = $redirectTo;
 			$this->validationInterval = $validationInterval;
+			$this->throwOnFailure = $throwOnFailure;
 			$this->entityManager = $entityManager;
 		}
 
 		/**
-		 * Redirect if there's no session, otherwise periodically re-validate the user in the database.
+		 * Check session eligibility and periodically re-validate the user in the database.
+		 *
+		 * On failure in attribute mode: sets 'account_eligibility_error' on $request->attributes, returns null.
+		 * On failure in exception mode: throws AccountEligibilityException.
+		 *
 		 * @param MethodContextInterface $context The context containing request and method information
-		 * @return Response|null Returns RedirectResponse when there is no session or the user is no longer valid, null otherwise
-		 * @throws SessionNotFoundException When session cannot be retrieved from request
+		 * @return Response|null Always null — this aspect never short-circuits via Response.
+		 * @throws AccountEligibilityException When throwOnFailure is true and the account is not eligible.
 		 */
 		public function before(MethodContextInterface $context): ?Response {
 			$request = $context->getRequest();
@@ -106,7 +122,7 @@
 			$userId = $request->attributes->get('session_user_id');
 
 			if ($userId === null) {
-				return new RedirectResponse($this->redirectTo);
+				return $this->fail($request, 'No authenticated session');
 			}
 
 			// Only hit the database if we haven't validated recently, to avoid a
@@ -120,18 +136,35 @@
 				$user = $this->entityManager->find($this->userEntityClass, $userId);
 
 				if (!$user || $user->isBanned()) {
-					// User no longer exists or has been banned - clear the session and redirect
+					// User no longer exists or has been banned - clear the session
 					$session->remove('auth_user_id');
 					$session->remove('auth_time');
 					$session->remove('auth_methods');
 					$session->remove('user_validated_at');
-					return new RedirectResponse($this->redirectTo);
+					return $this->fail($request, 'Account is no longer eligible');
 				}
 
 				// User is valid - update the validation timestamp to avoid immediate re-validation
 				$session->set('user_validated_at', $currentTime);
 			}
 
+			$request->attributes->remove('account_eligibility_error');
+			return null;
+		}
+
+		/**
+		 * Report an eligibility failure via the configured failure mode.
+		 * @param Request $request
+		 * @param string $reason Reason the account is not eligible
+		 * @return null Always null — attribute mode never short-circuits via Response.
+		 * @throws AccountEligibilityException When throwOnFailure is true.
+		 */
+		private function fail(Request $request, string $reason): ?Response {
+			if ($this->throwOnFailure) {
+				throw new AccountEligibilityException($reason);
+			}
+
+			$request->attributes->set('account_eligibility_error', $reason);
 			return null;
 		}
 	}
