@@ -65,7 +65,7 @@
 				'Validation/LoginFormValidator.php'            => 'src/Validation/LoginFormValidator.php',
 				'Validation/RegistrationFormValidator.php'     => 'src/Validation/RegistrationFormValidator.php',
 				'Entities/UserEntity.php'                      => 'src/Entities/UserEntity.php',
-				'Aspects/AuthenticationAspect.php'             => 'src/Aspects/AuthenticationAspect.php',
+				'Aspects/UserRevalidationAspect.php'           => 'src/Aspects/UserRevalidationAspect.php',
 				'Exceptions/UserCreationException.php'         => 'src/Exceptions/UserCreationException.php',
 				"/templates/{$engine}/login.{$ext}"             => "templates/login.{$ext}",
 				"/templates/{$engine}/registration_form.{$ext}" => "templates/registration_form.{$ext}",
@@ -104,7 +104,8 @@
 			$this->output->writeLn("2. Run the migration:");
 			$this->output->writeLn("   <yellow>php ./vendor/bin/sculpt quel:migrate</yellow>");
 			$this->output->writeLn("");
-			$this->output->writeLn("3. Apply authentication to your controllers:");
-			$this->output->writeLn("   <yellow>@InterceptWith(App\\Aspects\\AuthenticationAspect::class)</yellow>");
+			$this->output->writeLn("3. Apply authentication to your controllers (order matters):");
+			$this->output->writeLn("   <yellow>@InterceptWith(Quellabs\\Canvas\\Security\\SessionAuthenticationAspect::class)</yellow>");
+			$this->output->writeLn("   <yellow>@InterceptWith(App\\Aspects\\UserRevalidationAspect::class)</yellow>");
 		}
 	}
