@@ -9,12 +9,16 @@
 	use Quellabs\ObjectQuel\Annotations\Orm\OneToOne;
 	use Quellabs\ObjectQuel\Annotations\Orm\PrimaryKeyStrategy;
 	use Quellabs\ObjectQuel\Annotations\Orm\Table;
-	use Quellabs\ObjectQuel\Annotations\Orm\Index;
+	use Quellabs\ObjectQuel\Annotations\Orm\UniqueIndex;
 	use Quellabs\ObjectQuel\Collections\Collection;
 	use Quellabs\ObjectQuel\Collections\CollectionInterface;
 
 	/**
-	 * @Orm\Index(name="idx_username", columns={"username"})
+	 * Unique, not a plain index: without a DB-enforced constraint, two
+	 * concurrent registrations for the same username can both pass
+	 * AuthenticationController::findUser()'s read-then-write check and
+	 * both insert, producing two accounts with the same login identifier.
+	 * @Orm\UniqueIndex(name="uidx_username", columns={"username"})
 	 * @Orm\Table(name="users")
 	 */
 	class UserEntity implements AccountEligibilityInterface {
@@ -94,10 +98,10 @@
 		
 		/**
 		 * Sets banned status
-		 * @param string $banned
+		 * @param bool $banned
 		 * @return $this
 		 */
-		public function setBanned(string $banned): self {
+		public function setBanned(bool $banned): self {
 			$this->banned = $banned;
 			return $this;
 		}

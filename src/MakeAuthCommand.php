@@ -65,11 +65,18 @@
 				'Controllers/AuthenticatedController.php'      => 'src/Controllers/AuthenticatedController.php',
 				'Validation/LoginFormValidator.php'            => 'src/Validation/LoginFormValidator.php',
 				'Validation/RegistrationFormValidator.php'     => 'src/Validation/RegistrationFormValidator.php',
+				'Validation/ForgotPasswordFormValidator.php'   => 'src/Validation/ForgotPasswordFormValidator.php',
+				'Validation/ResetPasswordFormValidator.php'    => 'src/Validation/ResetPasswordFormValidator.php',
 				'Entities/UserEntity.php'                      => 'src/Entities/UserEntity.php',
+				'Entities/PasswordResetTokenEntity.php'        => 'src/Entities/PasswordResetTokenEntity.php',
+				'Contracts/PasswordResetNotifierInterface.php' => 'src/Contracts/PasswordResetNotifierInterface.php',
+				'Notifiers/LogPasswordResetNotifier.php'       => 'src/Notifiers/LogPasswordResetNotifier.php',
 				'Exceptions/UserCreationException.php'         => 'src/Exceptions/UserCreationException.php',
 				'Errors/AuthErrorHandler.php'                  => 'src/Errors/AuthErrorHandler.php',
 				"/templates/{$engine}/login.{$ext}"             => "templates/login.{$ext}",
 				"/templates/{$engine}/registration_form.{$ext}" => "templates/registration_form.{$ext}",
+				"/templates/{$engine}/forgot_password.{$ext}"   => "templates/forgot_password.{$ext}",
+				"/templates/{$engine}/reset_password.{$ext}"    => "templates/reset_password.{$ext}",
 			];
 		}
 		
@@ -115,5 +122,10 @@
 			$this->output->writeLn("   Need to customize the revalidation logic beyond what AccountEligibilityAspect");
 			$this->output->writeLn("   exposes? Eject a local, fully editable copy instead:");
 			$this->output->writeLn("   <yellow>php ./vendor/bin/sculpt make:auth-aspect</yellow>");
+			$this->output->writeLn("");
+			$this->output->writeLn("4. The forgot-password flow (src/Controllers/AuthenticationController.php) ships");
+			$this->output->writeLn("   with src/Notifiers/LogPasswordResetNotifier.php, which writes the reset link to");
+			$this->output->writeLn("   the error log instead of emailing it. Replace it with a real mailer-backed");
+			$this->output->writeLn("   App\\Contracts\\PasswordResetNotifierInterface implementation before going to production.");
 		}
 	}
