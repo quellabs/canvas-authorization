@@ -3,7 +3,9 @@
 	namespace App\Aspects;
 
 	use App\Entities\UserEntity;
+	use Quellabs\ObjectQuel\Exception\QuelException;
 	use Quellabs\Canvas\AOP\Contracts\BeforeAspectInterface;
+	use Quellabs\ObjectQuel\Exception\EntityResolutionException;
 	use Quellabs\Canvas\Routing\Contracts\MethodContextInterface;
 	use Quellabs\CanvasAuthorization\Exceptions\AccountEligibilityException;
 	use Quellabs\ObjectQuel\EntityManager;
@@ -48,9 +50,9 @@
 		/**
 		 * ObjectQuel EntityManager for database operations
 		 * Used to fetch and validate user entities from the database
-		 * @var EntityManager|null
+		 * @var EntityManager
 		 */
-		private ?EntityManager $entityManager;
+		private EntityManager $entityManager;
 
 		/**
 		 * Constructor to initialize the account eligibility aspect
@@ -63,11 +65,18 @@
 			bool $throwOnFailure = false,
 			?EntityManager $entityManager = null
 		) {
+			// Fail at construction rather than on first request — an EntityManager
+			// that fails to resolve via DI should fail loudly here, not as a fatal
+			// error the first time before() actually tries to revalidate a user
+			if ($entityManager === null) {
+				throw new \InvalidArgumentException('An EntityManager instance is required.');
+			}
+
 			$this->validationInterval = $validationInterval;
 			$this->throwOnFailure = $throwOnFailure;
 			$this->entityManager = $entityManager;
 		}
-
+		
 		/**
 		 * Check session eligibility and periodically re-validate the user in the database.
 		 *
@@ -76,7 +85,8 @@
 		 *
 		 * @param MethodContextInterface $context The context containing request and method information
 		 * @return Response|null Always null — this aspect never short-circuits via Response.
-		 * @throws AccountEligibilityException When throwOnFailure is true and the account is not eligible.
+		 * @throws EntityResolutionException
+		 * @throws QuelException
 		 */
 		public function before(MethodContextInterface $context): ?Response {
 			$request = $context->getRequest();
@@ -97,10 +107,11 @@
 			$currentTime = time();
 
 			if ($currentTime - $lastValidated > $this->validationInterval) {
+				// Fetch the user
 				$user = $this->entityManager->find(UserEntity::class, $userId);
-
+				
+				// User no longer exists or has been banned - clear the session
 				if (!$user || $user->isBanned()) {
-					// User no longer exists or has been banned - clear the session
 					$session->remove('auth_user_id');
 					$session->remove('auth_time');
 					$session->remove('auth_methods');
@@ -115,13 +126,12 @@
 			$request->attributes->remove('account_eligibility_error');
 			return null;
 		}
-
+		
 		/**
 		 * Report an eligibility failure via the configured failure mode.
 		 * @param Request $request
 		 * @param string $reason Reason the account is not eligible
-		 * @return null Always null — attribute mode never short-circuits via Response.
-		 * @throws AccountEligibilityException When throwOnFailure is true.
+		 * @return Response|null Always null — attribute mode never short-circuits via Response.
 		 */
 		private function fail(Request $request, string $reason): ?Response {
 			if ($this->throwOnFailure) {

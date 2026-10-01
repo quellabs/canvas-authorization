@@ -7,17 +7,14 @@
 
 	/**
 	 * Base controller for pages that require a logged-in, non-banned user.
-	 *
-	 * Extend this instead of BaseController to protect a controller's actions.
-	 * InterceptWith annotations on a class apply to every method in it and in
-	 * every subclass, so individual controllers never need to declare these
-	 * two aspects themselves. A genuinely sensitive action (e.g. deleting the
-	 * account) can still add a further, stricter check at the method level —
+	 * Class-level InterceptWith applies to every method and subclass, so
+	 * controllers extending this don't need to declare these aspects
+	 * themselves. For stricter per-action checks (e.g. deleting the account),
 	 * see Quellabs\Canvas\Security\StepUpAuthenticationAspect.
 	 *
-	 * throwOnFailure=true on both: neither aspect builds a Response itself —
-	 * install:auth also scaffolds AuthErrorHandler (src/Errors/AuthErrorHandler.php),
-	 * which is what actually turns a failure into a redirect to the login page.
+	 * throwOnFailure=true on both: AuthErrorHandler (scaffolded by
+	 * install:auth, src/Errors/AuthErrorHandler.php) turns the thrown
+	 * failure into a redirect to the login page.
 	 *
 	 * @InterceptWith(Quellabs\CanvasAuthorization\SessionAuthenticationAspect::class, throwOnFailure=true)
 	 * @InterceptWith(Quellabs\CanvasAuthorization\AccountEligibilityAspect::class, userEntityClass=App\Entities\UserEntity::class, throwOnFailure=true)

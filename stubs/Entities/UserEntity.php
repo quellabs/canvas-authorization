@@ -2,19 +2,18 @@
 	
 	namespace App\Entities;
 	
-	use Quellabs\CanvasAuthorization\Contracts\AccountEligibilityInterface;
-	use Quellabs\ObjectQuel\Annotations\Orm\Column;
-	use Quellabs\ObjectQuel\Annotations\Orm\ManyToOne;
-	use Quellabs\ObjectQuel\Annotations\Orm\OneToMany;
-	use Quellabs\ObjectQuel\Annotations\Orm\OneToOne;
-	use Quellabs\ObjectQuel\Annotations\Orm\PrimaryKeyStrategy;
 	use Quellabs\ObjectQuel\Annotations\Orm\Table;
-	use Quellabs\ObjectQuel\Annotations\Orm\Index;
-	use Quellabs\ObjectQuel\Collections\Collection;
-	use Quellabs\ObjectQuel\Collections\CollectionInterface;
+	use Quellabs\ObjectQuel\Annotations\Orm\Column;
+	use Quellabs\ObjectQuel\Annotations\Orm\PrimaryKeyStrategy;
+	use Quellabs\ObjectQuel\Annotations\Orm\UniqueIndex;
+	use Quellabs\CanvasAuthorization\Contracts\AccountEligibilityInterface;
 
 	/**
-	 * @Orm\Index(name="idx_username", columns={"username"})
+	 * Unique, not a plain index: without a DB-enforced constraint, two
+	 * concurrent registrations for the same username can both pass
+	 * AuthenticationController::findUser()'s read-then-write check and
+	 * both insert, producing two accounts with the same login identifier.
+	 * @Orm\UniqueIndex(name="uidx_username", columns={"username"})
 	 * @Orm\Table(name="users")
 	 */
 	class UserEntity implements AccountEligibilityInterface {
@@ -25,6 +24,11 @@
 		 */
 		protected ?int $id = null;
 		
+		/**
+		 * @Orm\Column(name="name", type="string", limit=255)
+		 */
+		protected string $name;
+
 		/**
 		 * @Orm\Column(name="username", type="string", limit=255)
 		 */
@@ -48,6 +52,24 @@
 			return $this->id;
 		}
 		
+		/**
+		 * Get name
+		 * @return string
+		 */
+		public function getName(): string {
+			return $this->name;
+		}
+
+		/**
+		 * Set name
+		 * @param string $name
+		 * @return $this
+		 */
+		public function setName(string $name): self {
+			$this->name = $name;
+			return $this;
+		}
+
 		/**
 		 * Get username
 		 * @return string
@@ -94,10 +116,10 @@
 		
 		/**
 		 * Sets banned status
-		 * @param string $banned
+		 * @param bool $banned
 		 * @return $this
 		 */
-		public function setBanned(string $banned): self {
+		public function setBanned(bool $banned): self {
 			$this->banned = $banned;
 			return $this;
 		}

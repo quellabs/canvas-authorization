@@ -2,9 +2,13 @@
 	
 	namespace App\Controllers;
 	
+	use App\Contracts\PasswordResetNotifierInterface;
+	use App\Entities\PasswordResetTokenEntity;
 	use App\Entities\UserEntity;
 	use App\Exceptions\UserCreationException;
+	use App\Notifiers\LogPasswordResetNotifier;
 	use Quellabs\Canvas\Annotations\Route;
+	use Quellabs\DependencyInjection\Container;
 	use Quellabs\ObjectQuel\ObjectQuel\QuelException;
 	use Quellabs\ObjectQuel\OrmException;
 	use Symfony\Component\HttpFoundation\Request;
@@ -13,9 +17,36 @@
 	use Quellabs\Canvas\Controllers\BaseController;
 	use Symfony\Component\HttpFoundation\RedirectResponse;
 	use Quellabs\Contracts\Templates\TemplateRenderException;
-	
+
 	class AuthenticationController extends BaseController {
-		
+
+		/**
+		 * How long a password reset token remains valid after issuance.
+		 */
+		private const RESET_TOKEN_TTL_SECONDS = 3600;
+
+		/**
+		 * @var PasswordResetNotifierInterface
+		 */
+		private PasswordResetNotifierInterface $passwordResetNotifier;
+
+		/**
+		 * AuthenticationController constructor
+		 *
+		 * $passwordResetNotifier is resolved through the DI container like any
+		 * other constructor dependency: register a service provider that
+		 * supports PasswordResetNotifierInterface (see LogPasswordResetNotifier's
+		 * docblock) to swap the delivery mechanism without editing this class.
+		 * Falls back to LogPasswordResetNotifier when nothing is registered, so
+		 * the forgot-password flow still works out of the box.
+		 * @param Container $container
+		 * @param PasswordResetNotifierInterface|null $passwordResetNotifier
+		 */
+		public function __construct(Container $container, ?PasswordResetNotifierInterface $passwordResetNotifier = null) {
+			parent::__construct($container);
+			$this->passwordResetNotifier = $passwordResetNotifier ?? new LogPasswordResetNotifier();
+		}
+
 		/**
 		 * Display the login form
 		 * @Route("/login", methods={"GET"})
@@ -40,7 +71,15 @@
 		 * @return Response
 		 */
 		public function logout(Request $request): Response {
-			$request->getSession()->clear();
+			$session = $request->getSession();
+
+			// invalidate() no-ops without a started session, so a logout
+			// with no prior session read would otherwise leave the old id live
+			if (!$session->isStarted()) {
+				$session->start();
+			}
+
+			$session->invalidate();
 			return new RedirectResponse('/');
 		}
 		
@@ -63,40 +102,35 @@
 		 * @throws TemplateRenderException
 		 */
 		public function processLogin(Request $request): Response {
-			// Check if form validation passed - if not, return to login form with validation errors
 			if (!$request->attributes->get('validation_passed', true)) {
 				return $this->render('login.{{ template_ext }}', [
 					'errors' => $request->attributes->get('validation_errors', [])
 				]);
 			}
-			
-			// Extract login credentials from the request
+
 			$username = $request->request->get('username');
 			$password = $request->request->get('password');
-			
-			// Look up the user by username
 			$user = $this->findUser($username);
-			
-			// Verify user exists and password is correct
+
 			if (!$user || !$this->checkPassword($password, $user)) {
-				// Return to login form with generic error message (avoid revealing whether username or password was wrong)
+				// Generic message: don't reveal whether username or password was wrong
 				return $this->render('login.{{ template_ext }}', [
 					'errors' => [
 						'general' => ['Invalid username or password.']
 					]
 				]);
 			}
-			
-			// Authentication successful - store user ID in session
+
+			// Regenerate the session id before authenticating it, so a
+			// pre-login session id fixed by an attacker can't be reused
 			$session = $request->getSession();
+			$session->migrate(true);
 			$session->set('auth_user_id', $user->getId());
 
-			// Record when and how this credential was proven, so StepUpAuthenticationAspect
-			// can require a recent login for sensitive actions elsewhere in the app
+			// Lets StepUpAuthenticationAspect require a recent login elsewhere in the app
 			$session->set('auth_time', time());
 			$session->set('auth_methods', ['pwd']);
 
-			// Redirect to home page after successful login
 			return new RedirectResponse('/');
 		}
 		
@@ -109,21 +143,17 @@
 		 * @throws TemplateRenderException|OrmException
 		 */
 		public function processRegistration(Request $request): Response {
-			// Check if validation passed from the interceptor
-			// If validation failed, return to form with validation errors
 			if (!$request->attributes->get('validation_passed', true)) {
 				return $this->render('registration_form.{{ template_ext }}', [
 					'errors' => $request->attributes->get('validation_errors', [])
 				]);
 			}
-			
-			// Extract form data from the request
+
+			$name = $request->request->get('name');
 			$username = $request->request->get('username');
 			$password = $request->request->get('password');
 			$confirmPassword = $request->request->get('confirm_password');
-			
-			// Server-side password confirmation check
-			// Ensure both password fields match
+
 			if ($password !== $confirmPassword) {
 				return $this->render('registration_form.{{ template_ext }}', [
 					'errors' => [
@@ -131,36 +161,31 @@
 					]
 				]);
 			}
-			
-			// Check if username is already taken
-			// Query database to see if user exists
+
+			// Unlike processLogin(), this confirms whether the account exists:
+			// registration has to tell a real user their username is taken,
+			// and enumeration here is lower-value than via login. Swap for a
+			// generic message if your threat model needs it covered too.
 			$user = $this->findUser($username);
-			
+
 			if ($user) {
-				// Return error if username already exists
 				return $this->render('registration_form.{{ template_ext }}', [
 					'errors' => [
 						'general' => ['User already exists.']
 					]
 				]);
 			}
-			
-			try {
-				// Create new user account
-				// This likely handles password hashing and database insertion
-				$user = $this->createUser($username, $password);
-				
-				// Log the user in automatically after successful registration
-				// Store user ID in session for authentication
-				$session = $request->getSession();
-				$session->set('auth_user_id', $user->getId());
 
-				// Registration includes setting a password, so it's a real credential
-				// proof — same auth_time/auth_methods contract as processLogin()
+			try {
+				$user = $this->createUser($name, $username, $password);
+
+				// Same session-fixation and auth_time/auth_methods handling as processLogin()
+				$session = $request->getSession();
+				$session->migrate(true);
+				$session->set('auth_user_id', $user->getId());
 				$session->set('auth_time', time());
 				$session->set('auth_methods', ['pwd']);
 
-				// Redirect to home page after successful registration
 				return new RedirectResponse('/');
 			} catch (UserCreationException $e) {
 				return $this->render('registration_form.{{ template_ext }}', [
@@ -170,8 +195,183 @@
 				]);
 			}
 		}
-		
-		
+
+		/**
+		 * Display the forgot-password form
+		 * @Route("/forgot-password", methods={"GET"})
+		 * @return Response
+		 * @throws TemplateRenderException
+		 */
+		public function forgotPassword(): Response {
+			return $this->render('forgot_password.{{ template_ext }}', [
+				'errors'    => [],
+				'submitted' => false,
+			]);
+		}
+
+		/**
+		 * Issue a reset token for the account, if one matches, and hand it
+		 * to the configured notifier. Always renders the same "submitted"
+		 * response regardless of whether $username matched, so this
+		 * endpoint can't be used to enumerate accounts.
+		 * @Route("/forgot-password", methods={"POST"})
+		 * @InterceptWith(Quellabs\Canvas\Validation\ValidateAspect::class, validator=App\Validation\ForgotPasswordFormValidator::class)
+		 * @param Request $request
+		 * @return Response
+		 * @throws TemplateRenderException
+		 */
+		public function processForgotPassword(Request $request): Response {
+			if (!$request->attributes->get('validation_passed', true)) {
+				return $this->render('forgot_password.{{ template_ext }}', [
+					'errors'    => $request->attributes->get('validation_errors', []),
+					'submitted' => false,
+				]);
+			}
+
+			$username = $request->request->get('username');
+			$user = $this->findUser($username);
+
+			if ($user !== null) {
+				$rawToken = bin2hex(random_bytes(32));
+
+				$token = new PasswordResetTokenEntity();
+				$token
+					->setUserId($user->getId())
+					->setTokenHash($this->hashResetToken($rawToken))
+					->setExpiresAt(new \DateTime('+' . self::RESET_TOKEN_TTL_SECONDS . ' seconds'));
+
+				$this->em()->persist($token);
+				$this->em()->flush();
+
+				$this->passwordResetNotifier->send($user->getUsername(), $rawToken);
+			}
+
+			return $this->render('forgot_password.{{ template_ext }}', [
+				'errors'    => [],
+				'submitted' => true,
+			]);
+		}
+
+		/**
+		 * Display the reset-password form for the token in the query string.
+		 * Token validity isn't checked here — processResetPassword() does
+		 * that on submit, so an expired token still shows a clear error.
+		 * @Route("/reset-password", methods={"GET"})
+		 * @param Request $request
+		 * @return Response
+		 * @throws TemplateRenderException
+		 */
+		public function resetPassword(Request $request): Response {
+			return $this->render('reset_password.{{ template_ext }}', [
+				'token'  => (string)$request->query->get('token', ''),
+				'errors' => [],
+			]);
+		}
+
+		/**
+		 * Consume the token and, if still valid, set the new password. On
+		 * success, also marks every other outstanding token for the account
+		 * as used, ending every reset link in flight, not just this one.
+		 * @Route("/reset-password", methods={"POST"})
+		 * @InterceptWith(Quellabs\Canvas\Validation\ValidateAspect::class, validator=App\Validation\ResetPasswordFormValidator::class)
+		 * @param Request $request
+		 * @return Response
+		 * @throws TemplateRenderException
+		 */
+		public function processResetPassword(Request $request): Response {
+			$rawToken = (string)$request->request->get('token', '');
+
+			if (!$request->attributes->get('validation_passed', true)) {
+				return $this->render('reset_password.{{ template_ext }}', [
+					'token'  => $rawToken,
+					'errors' => $request->attributes->get('validation_errors', []),
+				]);
+			}
+
+			$password = $request->request->get('password');
+			$confirmPassword = $request->request->get('confirm_password');
+
+			if ($password !== $confirmPassword) {
+				return $this->render('reset_password.{{ template_ext }}', [
+					'token'  => $rawToken,
+					'errors' => ['general' => ['Passwords do not match.']],
+				]);
+			}
+
+			$resetToken = $this->findValidResetToken($rawToken);
+
+			if ($resetToken === null) {
+				return $this->render('reset_password.{{ template_ext }}', [
+					'token'  => $rawToken,
+					'errors' => ['general' => ['This password reset link is invalid or has expired.']],
+				]);
+			}
+
+			try {
+				$user = $this->em()->find(UserEntity::class, $resetToken->getUserId());
+			} catch (OrmException $e) {
+				$user = null;
+			}
+
+			if ($user === null) {
+				return $this->render('reset_password.{{ template_ext }}', [
+					'token'  => $rawToken,
+					'errors' => ['general' => ['This password reset link is invalid or has expired.']],
+				]);
+			}
+
+			$user->setPassword(password_hash($password, PASSWORD_DEFAULT));
+
+			$now = new \DateTime();
+			$resetToken->setUsedAt($now);
+
+			try {
+				$otherTokens = $this->em()->findBy(PasswordResetTokenEntity::class, ['userId' => $user->getId()]);
+			} catch (QuelException $e) {
+				$otherTokens = [];
+			}
+
+			foreach ($otherTokens as $otherToken) {
+				if ($otherToken->getUsedAt() === null) {
+					$otherToken->setUsedAt($now);
+				}
+			}
+
+			$this->em()->flush();
+
+			return new RedirectResponse('/login');
+		}
+
+		/**
+		 * Looks up a password reset token by its raw value and returns it
+		 * only when still usable: known, unused, and unexpired.
+		 * @param string $rawToken As handed to PasswordResetNotifierInterface::send().
+		 * @return PasswordResetTokenEntity|null
+		 */
+		private function findValidResetToken(string $rawToken): ?PasswordResetTokenEntity {
+			try {
+				$tokens = $this->em()->findBy(PasswordResetTokenEntity::class, ['tokenHash' => $this->hashResetToken($rawToken)]);
+			} catch (QuelException $e) {
+				return null;
+			}
+
+			$token = $tokens[0] ?? null;
+
+			if ($token === null || $token->getUsedAt() !== null || $token->getExpiresAt() < new \DateTime()) {
+				return null;
+			}
+
+			return $token;
+		}
+
+		/**
+		 * @param string $rawToken
+		 * @return string
+		 */
+		private function hashResetToken(string $rawToken): string {
+			return hash('sha256', $rawToken);
+		}
+
 		/**
 		 * Find user by username in database
 		 * @param string $username
@@ -198,14 +398,16 @@
 		
 		/**
 		 * Create a new user and persist to database
+		 * @param string $name
 		 * @param string $username
 		 * @param string $password
 		 * @return UserEntity
 		 * @throws UserCreationException
 		 */
-		private function createUser(string $username, string $password): UserEntity {
+		private function createUser(string $name, string $username, string $password): UserEntity {
 			try {
 				$user = new UserEntity();
+				$user->setName($name);
 				$user->setUsername($username);
 				$user->setPassword(password_hash($password, PASSWORD_DEFAULT));
 				
@@ -214,10 +416,7 @@
 				
 				return $user;
 			} catch (OrmException $e) {
-				// Log the actual database error for debugging
 				error_log("User creation failed: " . $e->getMessage());
-				
-				// Throw a more specific exception
 				throw new UserCreationException("Failed to create user account", 0, $e);
 			}
 		}

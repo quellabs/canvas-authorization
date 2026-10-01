@@ -8,26 +8,6 @@
 	class MakeAuthCommand extends StubCommand {
 		
 		/**
-		 * Returns token list
-		 * @return array|string[]
-		 */
-		protected function getTokens(): array {
-			$templateExtensions = [
-				'smarty' => 'tpl',
-				'blade'  => 'blade.php',
-				'latte'  => 'latte',
-				'php'    => 'php',
-				'twig'   => 'twig',
-			];
-			
-			$ext = $templateExtensions[$this->resolveTemplateEngine()] ?? 'tpl';
-			
-			return array_merge(parent::getTokens(), [
-				'{{ template_ext }}' => $ext,
-			]);
-		}
-		
-		/**
 		 * Returns the signature of this command
 		 * @return string
 		 */
@@ -42,37 +22,7 @@
 		public function getDescription(): string {
 			return "Install authentication system with login, registration, and user management";
 		}
-		
-		/**
-		 * Return stubs to copy: stub path (relative to package stubs/) => target path (relative to project root)
-		 * @return array<string, string>
-		 */
-		protected function getStubs(): array {
-			$engine = $this->resolveTemplateEngine();
-			
-			$templateExtensions = [
-				'smarty' => 'tpl',
-				'blade'  => 'blade.php',
-				'latte'  => 'latte',
-				'php'    => 'php',
-				'twig'   => 'twig',
-			];
-			
-			$ext = $templateExtensions[$engine] ?? 'tpl';
-			
-			return [
-				'Controllers/AuthenticationController.php'     => 'src/Controllers/AuthenticationController.php',
-				'Controllers/AuthenticatedController.php'      => 'src/Controllers/AuthenticatedController.php',
-				'Validation/LoginFormValidator.php'            => 'src/Validation/LoginFormValidator.php',
-				'Validation/RegistrationFormValidator.php'     => 'src/Validation/RegistrationFormValidator.php',
-				'Entities/UserEntity.php'                      => 'src/Entities/UserEntity.php',
-				'Exceptions/UserCreationException.php'         => 'src/Exceptions/UserCreationException.php',
-				'Errors/AuthErrorHandler.php'                  => 'src/Errors/AuthErrorHandler.php',
-				"/templates/{$engine}/login.{$ext}"             => "templates/login.{$ext}",
-				"/templates/{$engine}/registration_form.{$ext}" => "templates/registration_form.{$ext}",
-			];
-		}
-		
+
 		/**
 		 * Execute the command, then show next steps on success.
 		 * @param ConfigurationManager $config
@@ -91,6 +41,64 @@
 			return $exitCode;
 		}
 		
+		
+		/**
+		 * Maps a template engine name to the file extension its templates use.
+		 */
+		private const array TEMPLATE_EXTENSIONS = [
+			'smarty' => 'tpl',
+			'blade'  => 'blade.php',
+			'latte'  => 'latte',
+			'php'    => 'php',
+			'twig'   => 'twig',
+		];
+
+		/**
+		 * Returns token list
+		 * @return array|string[]
+		 */
+		protected function getTokens(): array {
+			return array_merge(parent::getTokens(), [
+				'{{ template_ext }}' => $this->resolveTemplateExtension(),
+			]);
+		}
+
+		/**
+		 * Return stubs to copy: stub path (relative to package stubs/) => target path (relative to project root)
+		 * @return array<string, string>
+		 */
+		protected function getStubs(): array {
+			$engine = $this->resolveTemplateEngine();
+			$ext = $this->resolveTemplateExtension();
+
+			return [
+				'Controllers/AuthenticationController.php'     => 'src/Controllers/AuthenticationController.php',
+				'Controllers/AuthenticatedController.php'      => 'src/Controllers/AuthenticatedController.php',
+				'Validation/LoginFormValidator.php'            => 'src/Validation/LoginFormValidator.php',
+				'Validation/RegistrationFormValidator.php'     => 'src/Validation/RegistrationFormValidator.php',
+				'Validation/ForgotPasswordFormValidator.php'   => 'src/Validation/ForgotPasswordFormValidator.php',
+				'Validation/ResetPasswordFormValidator.php'    => 'src/Validation/ResetPasswordFormValidator.php',
+				'Entities/UserEntity.php'                      => 'src/Entities/UserEntity.php',
+				'Entities/PasswordResetTokenEntity.php'        => 'src/Entities/PasswordResetTokenEntity.php',
+				'Contracts/PasswordResetNotifierInterface.php' => 'src/Contracts/PasswordResetNotifierInterface.php',
+				'Notifiers/LogPasswordResetNotifier.php'       => 'src/Notifiers/LogPasswordResetNotifier.php',
+				'Exceptions/UserCreationException.php'         => 'src/Exceptions/UserCreationException.php',
+				'Errors/AuthErrorHandler.php'                  => 'src/Errors/AuthErrorHandler.php',
+				"/templates/{$engine}/login.{$ext}"             => "templates/login.{$ext}",
+				"/templates/{$engine}/registration_form.{$ext}" => "templates/registration_form.{$ext}",
+				"/templates/{$engine}/forgot_password.{$ext}"   => "templates/forgot_password.{$ext}",
+				"/templates/{$engine}/reset_password.{$ext}"    => "templates/reset_password.{$ext}",
+			];
+		}
+		
+		/**
+		 * Resolves the file extension used by the configured template engine.
+		 * @return string
+		 */
+		private function resolveTemplateExtension(): string {
+			return self::TEMPLATE_EXTENSIONS[$this->resolveTemplateEngine()] ?? 'tpl';
+		}
+
 		/**
 		 * Show next steps after successful installation
 		 * @return void
@@ -115,5 +123,12 @@
 			$this->output->writeLn("   Need to customize the revalidation logic beyond what AccountEligibilityAspect");
 			$this->output->writeLn("   exposes? Eject a local, fully editable copy instead:");
 			$this->output->writeLn("   <yellow>php ./vendor/bin/sculpt make:auth-aspect</yellow>");
+			$this->output->writeLn("");
+			$this->output->writeLn("4. The forgot-password flow (src/Controllers/AuthenticationController.php) ships");
+			$this->output->writeLn("   with src/Notifiers/LogPasswordResetNotifier.php, which writes the reset link to");
+			$this->output->writeLn("   the error log instead of emailing it. Before going to production, write a real");
+			$this->output->writeLn("   mailer-backed App\\Contracts\\PasswordResetNotifierInterface implementation and");
+			$this->output->writeLn("   register a DI service provider for it — AuthenticationController picks it up");
+			$this->output->writeLn("   automatically, no controller edit needed.");
 		}
 	}
