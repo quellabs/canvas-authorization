@@ -2,16 +2,11 @@
 	
 	namespace App\Entities;
 	
-	use Quellabs\CanvasAuthorization\Contracts\AccountEligibilityInterface;
-	use Quellabs\ObjectQuel\Annotations\Orm\Column;
-	use Quellabs\ObjectQuel\Annotations\Orm\ManyToOne;
-	use Quellabs\ObjectQuel\Annotations\Orm\OneToMany;
-	use Quellabs\ObjectQuel\Annotations\Orm\OneToOne;
-	use Quellabs\ObjectQuel\Annotations\Orm\PrimaryKeyStrategy;
 	use Quellabs\ObjectQuel\Annotations\Orm\Table;
+	use Quellabs\ObjectQuel\Annotations\Orm\Column;
+	use Quellabs\ObjectQuel\Annotations\Orm\PrimaryKeyStrategy;
 	use Quellabs\ObjectQuel\Annotations\Orm\UniqueIndex;
-	use Quellabs\ObjectQuel\Collections\Collection;
-	use Quellabs\ObjectQuel\Collections\CollectionInterface;
+	use Quellabs\CanvasAuthorization\Contracts\AccountEligibilityInterface;
 
 	/**
 	 * Unique, not a plain index: without a DB-enforced constraint, two

@@ -49,10 +49,8 @@
 		public function logout(Request $request): Response {
 			$session = $request->getSession();
 
-			// invalidate() regenerates the session id, but silently no-ops
-			// if no session has been started yet — explicitly start one
-			// first so a logout with no earlier session read still rotates
-			// the id rather than leaving the old one live.
+			// invalidate() no-ops without a started session, so a logout
+			// with no prior session read would otherwise leave the old id live
 			if (!$session->isStarted()) {
 				$session->start();
 			}
@@ -80,44 +78,35 @@
 		 * @throws TemplateRenderException
 		 */
 		public function processLogin(Request $request): Response {
-			// Check if form validation passed - if not, return to login form with validation errors
 			if (!$request->attributes->get('validation_passed', true)) {
 				return $this->render('login.{{ template_ext }}', [
 					'errors' => $request->attributes->get('validation_errors', [])
 				]);
 			}
-			
-			// Extract login credentials from the request
+
 			$username = $request->request->get('username');
 			$password = $request->request->get('password');
-			
-			// Look up the user by username
 			$user = $this->findUser($username);
-			
-			// Verify user exists and password is correct
+
 			if (!$user || !$this->checkPassword($password, $user)) {
-				// Return to login form with generic error message (avoid revealing whether username or password was wrong)
+				// Generic message: don't reveal whether username or password was wrong
 				return $this->render('login.{{ template_ext }}', [
 					'errors' => [
 						'general' => ['Invalid username or password.']
 					]
 				]);
 			}
-			
-			// Authentication successful - store user ID in session.
-			// Regenerate the session id first (session fixation): a session
-			// id an attacker fixed before login must not still be valid
-			// once this request authenticates it.
+
+			// Regenerate the session id before authenticating it, so a
+			// pre-login session id fixed by an attacker can't be reused
 			$session = $request->getSession();
 			$session->migrate(true);
 			$session->set('auth_user_id', $user->getId());
 
-			// Record when and how this credential was proven, so StepUpAuthenticationAspect
-			// can require a recent login for sensitive actions elsewhere in the app
+			// Lets StepUpAuthenticationAspect require a recent login elsewhere in the app
 			$session->set('auth_time', time());
 			$session->set('auth_methods', ['pwd']);
 
-			// Redirect to home page after successful login
 			return new RedirectResponse('/');
 		}
 		
@@ -130,21 +119,16 @@
 		 * @throws TemplateRenderException|OrmException
 		 */
 		public function processRegistration(Request $request): Response {
-			// Check if validation passed from the interceptor
-			// If validation failed, return to form with validation errors
 			if (!$request->attributes->get('validation_passed', true)) {
 				return $this->render('registration_form.{{ template_ext }}', [
 					'errors' => $request->attributes->get('validation_errors', [])
 				]);
 			}
-			
-			// Extract form data from the request
+
 			$username = $request->request->get('username');
 			$password = $request->request->get('password');
 			$confirmPassword = $request->request->get('confirm_password');
-			
-			// Server-side password confirmation check
-			// Ensure both password fields match
+
 			if ($password !== $confirmPassword) {
 				return $this->render('registration_form.{{ template_ext }}', [
 					'errors' => [
@@ -152,49 +136,31 @@
 					]
 				]);
 			}
-			
-			// Check if username is already taken
-			// Query database to see if user exists
-			//
-			// Unlike processLogin()'s generic "Invalid username or password"
-			// (which deliberately never confirms whether an account exists),
-			// this does confirm it, by design: a registration form has to
-			// tell a real user their email is already taken so they can go
-			// log in instead, and username/email enumeration via the
-			// register endpoint is a much lower-value attack than via login
-			// (it doesn't yield a working credential). If your application's
-			// threat model needs enumeration resistance on registration too,
-			// replace this with a generic message and rely on the
-			// confirmation email/forgot-password flow to tell the real owner.
+
+			// Unlike processLogin(), this confirms whether the account exists:
+			// registration has to tell a real user their username is taken,
+			// and enumeration here is lower-value than via login. Swap for a
+			// generic message if your threat model needs it covered too.
 			$user = $this->findUser($username);
 
 			if ($user) {
-				// Return error if username already exists
 				return $this->render('registration_form.{{ template_ext }}', [
 					'errors' => [
 						'general' => ['User already exists.']
 					]
 				]);
 			}
-			
+
 			try {
-				// Create new user account
-				// This likely handles password hashing and database insertion
 				$user = $this->createUser($username, $password);
-				
-				// Log the user in automatically after successful registration.
-				// Store user ID in session for authentication. Regenerate the
-				// session id first, same session-fixation reasoning as processLogin().
+
+				// Same session-fixation and auth_time/auth_methods handling as processLogin()
 				$session = $request->getSession();
 				$session->migrate(true);
 				$session->set('auth_user_id', $user->getId());
-
-				// Registration includes setting a password, so it's a real credential
-				// proof — same auth_time/auth_methods contract as processLogin()
 				$session->set('auth_time', time());
 				$session->set('auth_methods', ['pwd']);
 
-				// Redirect to home page after successful registration
 				return new RedirectResponse('/');
 			} catch (UserCreationException $e) {
 				return $this->render('registration_form.{{ template_ext }}', [
@@ -219,16 +185,10 @@
 		}
 
 		/**
-		 * Process a forgot-password form submission: issue a reset token
-		 * for the account, if one matches, and hand it to the configured
-		 * notifier.
-		 *
-		 * Always renders the same "submitted" response whether or not
-		 * $username matched an account — same anti-enumeration reasoning
-		 * as processLogin(), but applied here instead of at registration:
-		 * telling those apart would let a caller enumerate registered
-		 * accounts through this endpoint even if registration itself
-		 * doesn't try to hide that.
+		 * Issue a reset token for the account, if one matches, and hand it
+		 * to the configured notifier. Always renders the same "submitted"
+		 * response regardless of whether $username matched, so this
+		 * endpoint can't be used to enumerate accounts.
 		 * @Route("/forgot-password", methods={"POST"})
 		 * @InterceptWith(Quellabs\Canvas\Validation\ValidateAspect::class, validator=App\Validation\ForgotPasswordFormValidator::class)
 		 * @param Request $request
@@ -258,9 +218,7 @@
 				$this->em()->persist($token);
 				$this->em()->flush();
 
-				// Swap this for a real email-sending implementation of
-				// PasswordResetNotifierInterface before going to production —
-				// see App\Notifiers\LogPasswordResetNotifier's own docblock.
+				// Swap for a real email-sending PasswordResetNotifierInterface before production
 				(new LogPasswordResetNotifier())->send($user->getUsername(), $rawToken);
 			}
 
@@ -272,10 +230,8 @@
 
 		/**
 		 * Display the reset-password form for the token in the query string.
-		 * Does not validate the token here — processResetPassword() does
-		 * that on submit, so a token that expires between viewing and
-		 * submitting the form still gets a clear error instead of a
-		 * confusing "page you can't reach".
+		 * Token validity isn't checked here — processResetPassword() does
+		 * that on submit, so an expired token still shows a clear error.
 		 * @Route("/reset-password", methods={"GET"})
 		 * @param Request $request
 		 * @return Response
@@ -289,12 +245,9 @@
 		}
 
 		/**
-		 * Process a reset-password form submission: consume the token and,
-		 * if it's still valid, set the new password.
-		 *
-		 * On success, also marks every other outstanding token for the
-		 * same account as used — a successful reset ends every reset link
-		 * that was in flight, not just the one that was clicked.
+		 * Consume the token and, if still valid, set the new password. On
+		 * success, also marks every other outstanding token for the account
+		 * as used, ending every reset link in flight, not just this one.
 		 * @Route("/reset-password", methods={"POST"})
 		 * @InterceptWith(Quellabs\Canvas\Validation\ValidateAspect::class, validator=App\Validation\ResetPasswordFormValidator::class)
 		 * @param Request $request
@@ -437,10 +390,7 @@
 				
 				return $user;
 			} catch (OrmException $e) {
-				// Log the actual database error for debugging
 				error_log("User creation failed: " . $e->getMessage());
-				
-				// Throw a more specific exception
 				throw new UserCreationException("Failed to create user account", 0, $e);
 			}
 		}

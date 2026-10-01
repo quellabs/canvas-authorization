@@ -8,26 +8,6 @@
 	class MakeAuthCommand extends StubCommand {
 		
 		/**
-		 * Returns token list
-		 * @return array|string[]
-		 */
-		protected function getTokens(): array {
-			$templateExtensions = [
-				'smarty' => 'tpl',
-				'blade'  => 'blade.php',
-				'latte'  => 'latte',
-				'php'    => 'php',
-				'twig'   => 'twig',
-			];
-			
-			$ext = $templateExtensions[$this->resolveTemplateEngine()] ?? 'tpl';
-			
-			return array_merge(parent::getTokens(), [
-				'{{ template_ext }}' => $ext,
-			]);
-		}
-		
-		/**
 		 * Returns the signature of this command
 		 * @return string
 		 */
@@ -42,24 +22,55 @@
 		public function getDescription(): string {
 			return "Install authentication system with login, registration, and user management";
 		}
+
+		/**
+		 * Execute the command, then show next steps on success.
+		 * @param ConfigurationManager $config
+		 * @return int Exit code (0 = success, 1 = error)
+		 */
+		public function execute(ConfigurationManager $config): int {
+			$this->output->writeLn("<green>Installing Authentication System</green>");
+			$this->output->writeLn("");
+			
+			$exitCode = parent::execute($config);
+			
+			if ($exitCode === 0) {
+				$this->showNextSteps();
+			}
+			
+			return $exitCode;
+		}
 		
+		
+		/**
+		 * Maps a template engine name to the file extension its templates use.
+		 */
+		private const array TEMPLATE_EXTENSIONS = [
+			'smarty' => 'tpl',
+			'blade'  => 'blade.php',
+			'latte'  => 'latte',
+			'php'    => 'php',
+			'twig'   => 'twig',
+		];
+
+		/**
+		 * Returns token list
+		 * @return array|string[]
+		 */
+		protected function getTokens(): array {
+			return array_merge(parent::getTokens(), [
+				'{{ template_ext }}' => $this->resolveTemplateExtension(),
+			]);
+		}
+
 		/**
 		 * Return stubs to copy: stub path (relative to package stubs/) => target path (relative to project root)
 		 * @return array<string, string>
 		 */
 		protected function getStubs(): array {
 			$engine = $this->resolveTemplateEngine();
-			
-			$templateExtensions = [
-				'smarty' => 'tpl',
-				'blade'  => 'blade.php',
-				'latte'  => 'latte',
-				'php'    => 'php',
-				'twig'   => 'twig',
-			];
-			
-			$ext = $templateExtensions[$engine] ?? 'tpl';
-			
+			$ext = $this->resolveTemplateExtension();
+
 			return [
 				'Controllers/AuthenticationController.php'     => 'src/Controllers/AuthenticationController.php',
 				'Controllers/AuthenticatedController.php'      => 'src/Controllers/AuthenticatedController.php',
@@ -81,23 +92,13 @@
 		}
 		
 		/**
-		 * Execute the command, then show next steps on success.
-		 * @param ConfigurationManager $config
-		 * @return int Exit code (0 = success, 1 = error)
+		 * Resolves the file extension used by the configured template engine.
+		 * @return string
 		 */
-		public function execute(ConfigurationManager $config): int {
-			$this->output->writeLn("<green>Installing Authentication System</green>");
-			$this->output->writeLn("");
-			
-			$exitCode = parent::execute($config);
-			
-			if ($exitCode === 0) {
-				$this->showNextSteps();
-			}
-			
-			return $exitCode;
+		private function resolveTemplateExtension(): string {
+			return self::TEMPLATE_EXTENSIONS[$this->resolveTemplateEngine()] ?? 'tpl';
 		}
-		
+
 		/**
 		 * Show next steps after successful installation
 		 * @return void

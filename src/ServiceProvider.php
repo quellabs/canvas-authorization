@@ -6,8 +6,12 @@
 	
 	class ServiceProvider extends \Quellabs\Sculpt\ServiceProvider {
 		
+		/**
+		 * Register the commands into the Sculpt application
+		 * @param Application $application
+		 * @return void
+		 */
 		public function register(Application $application): void {
-			// Register the commands into the Sculpt application
 			$this->registerCommands($application, [
 				MakeAuthCommand::class,
 				MakeAuthAspectCommand::class

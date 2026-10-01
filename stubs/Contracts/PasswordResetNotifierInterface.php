@@ -12,11 +12,11 @@
 
 		/**
 		 * @param string $username Address/username to notify, as stored on
-		 * the account (see UserEntity::getUsername()).
+		 *                         the account (see UserEntity::getUsername()).
 		 * @param string $rawToken The unhashed token — this is the only
-		 * place the raw value is ever exposed outside
-		 * AuthenticationController; it is never persisted (see
-		 * PasswordResetTokenEntity).
+		 *                         place the raw value is ever exposed outside
+		 *                         AuthenticationController; it is never persisted (see
+		 *                         PasswordResetTokenEntity).
 		 */
 		public function send(string $username, string $rawToken): void;
 	}
