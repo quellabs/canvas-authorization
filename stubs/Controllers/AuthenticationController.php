@@ -125,6 +125,7 @@
 				]);
 			}
 
+			$name = $request->request->get('name');
 			$username = $request->request->get('username');
 			$password = $request->request->get('password');
 			$confirmPassword = $request->request->get('confirm_password');
@@ -152,7 +153,7 @@
 			}
 
 			try {
-				$user = $this->createUser($username, $password);
+				$user = $this->createUser($name, $username, $password);
 
 				// Same session-fixation and auth_time/auth_methods handling as processLogin()
 				$session = $request->getSession();
@@ -374,14 +375,16 @@
 		
 		/**
 		 * Create a new user and persist to database
+		 * @param string $name
 		 * @param string $username
 		 * @param string $password
 		 * @return UserEntity
 		 * @throws UserCreationException
 		 */
-		private function createUser(string $username, string $password): UserEntity {
+		private function createUser(string $name, string $username, string $password): UserEntity {
 			try {
 				$user = new UserEntity();
+				$user->setName($name);
 				$user->setUsername($username);
 				$user->setPassword(password_hash($password, PASSWORD_DEFAULT));
 				

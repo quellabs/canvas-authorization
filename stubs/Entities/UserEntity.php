@@ -25,6 +25,11 @@
 		protected ?int $id = null;
 		
 		/**
+		 * @Orm\Column(name="name", type="string", limit=255)
+		 */
+		protected string $name;
+
+		/**
 		 * @Orm\Column(name="username", type="string", limit=255)
 		 */
 		protected string $username;
@@ -47,6 +52,24 @@
 			return $this->id;
 		}
 		
+		/**
+		 * Get name
+		 * @return string
+		 */
+		public function getName(): string {
+			return $this->name;
+		}
+
+		/**
+		 * Set name
+		 * @param string $name
+		 * @return $this
+		 */
+		public function setName(string $name): self {
+			$this->name = $name;
+			return $this;
+		}
+
 		/**
 		 * Get username
 		 * @return string

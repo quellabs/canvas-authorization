@@ -4,6 +4,7 @@
 	
 	use Quellabs\Canvas\Validation\Contracts\ValidationInterface;
 	use Quellabs\Canvas\Validation\Rules\Email;
+	use Quellabs\Canvas\Validation\Rules\Length;
 	use Quellabs\Canvas\Validation\Rules\NotBlank;
 	
 	/**
@@ -28,7 +29,8 @@
 				],
 				// Password field validation
 				'password'         => [
-					new NotBlank(),  // Ensure password is not empty
+					new NotBlank(),     // Ensure password is not empty
+					new Length(min: 8), // Match the client-side minimum shown on the form
 				],
 				// Connfirm password field validation
 				'confirm_password' => [

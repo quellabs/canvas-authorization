@@ -3,6 +3,7 @@
 	namespace App\Validation;
 
 	use Quellabs\Canvas\Validation\Contracts\ValidationInterface;
+	use Quellabs\Canvas\Validation\Rules\Length;
 	use Quellabs\Canvas\Validation\Rules\NotBlank;
 
 	/**
@@ -22,7 +23,8 @@
 				],
 				// Password field validation
 				'password'          => [
-					new NotBlank(),  // Ensure password is not empty
+					new NotBlank(),     // Ensure password is not empty
+					new Length(min: 8), // Same minimum as RegistrationFormValidator
 				],
 				// Confirm password field validation
 				'confirm_password'  => [
