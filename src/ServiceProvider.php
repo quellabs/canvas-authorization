@@ -9,7 +9,8 @@
 		public function register(Application $application): void {
 			// Register the commands into the Sculpt application
 			$this->registerCommands($application, [
-				MakeAuthCommand::class
+				MakeAuthCommand::class,
+				MakeAuthAspectCommand::class
 			]);
 		}
 	}

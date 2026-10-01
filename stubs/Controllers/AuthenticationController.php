@@ -24,7 +24,7 @@
 		 * @throws TemplateRenderException
 		 */
 		public function login(Request $request): Response {
-			if (!empty($request->getSession()->get('user_id'))) {
+			if (!empty($request->getSession()->get('auth_user_id'))) {
 				return new RedirectResponse('/');
 			}
 			
@@ -88,8 +88,14 @@
 			}
 			
 			// Authentication successful - store user ID in session
-			$request->getSession()->set('user_id', $user->getId());
-			
+			$session = $request->getSession();
+			$session->set('auth_user_id', $user->getId());
+
+			// Record when and how this credential was proven, so StepUpAuthenticationAspect
+			// can require a recent login for sensitive actions elsewhere in the app
+			$session->set('auth_time', time());
+			$session->set('auth_methods', ['pwd']);
+
 			// Redirect to home page after successful login
 			return new RedirectResponse('/');
 		}
@@ -146,8 +152,14 @@
 				
 				// Log the user in automatically after successful registration
 				// Store user ID in session for authentication
-				$request->getSession()->set('user_id', $user->getId());
-				
+				$session = $request->getSession();
+				$session->set('auth_user_id', $user->getId());
+
+				// Registration includes setting a password, so it's a real credential
+				// proof — same auth_time/auth_methods contract as processLogin()
+				$session->set('auth_time', time());
+				$session->set('auth_methods', ['pwd']);
+
 				// Redirect to home page after successful registration
 				return new RedirectResponse('/');
 			} catch (UserCreationException $e) {
