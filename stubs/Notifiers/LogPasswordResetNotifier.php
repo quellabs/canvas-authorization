@@ -10,10 +10,12 @@
 	 *
 	 * This is a placeholder so install:auth produces a working forgot-
 	 * password flow out of the box — it is not meant to reach production.
-	 * Replace the body below with a real mailer call, and swap the
-	 * `new LogPasswordResetNotifier()` call in
-	 * AuthenticationController::processForgotPassword() for your
-	 * replacement, before deploying.
+	 * AuthenticationController takes a PasswordResetNotifierInterface
+	 * constructor argument and only falls back to this class when the DI
+	 * container has no other binding for the interface, so swap to a
+	 * real mailer-backed implementation by registering a service provider
+	 * that supports PasswordResetNotifierInterface — no controller edit
+	 * needed.
 	 */
 	class LogPasswordResetNotifier implements PasswordResetNotifierInterface {
 

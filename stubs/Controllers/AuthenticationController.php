@@ -2,11 +2,13 @@
 	
 	namespace App\Controllers;
 	
+	use App\Contracts\PasswordResetNotifierInterface;
 	use App\Entities\PasswordResetTokenEntity;
 	use App\Entities\UserEntity;
 	use App\Exceptions\UserCreationException;
 	use App\Notifiers\LogPasswordResetNotifier;
 	use Quellabs\Canvas\Annotations\Route;
+	use Quellabs\DependencyInjection\Container;
 	use Quellabs\ObjectQuel\ObjectQuel\QuelException;
 	use Quellabs\ObjectQuel\OrmException;
 	use Symfony\Component\HttpFoundation\Request;
@@ -22,6 +24,28 @@
 		 * How long a password reset token remains valid after issuance.
 		 */
 		private const RESET_TOKEN_TTL_SECONDS = 3600;
+
+		/**
+		 * @var PasswordResetNotifierInterface
+		 */
+		private PasswordResetNotifierInterface $passwordResetNotifier;
+
+		/**
+		 * AuthenticationController constructor
+		 *
+		 * $passwordResetNotifier is resolved through the DI container like any
+		 * other constructor dependency: register a service provider that
+		 * supports PasswordResetNotifierInterface (see LogPasswordResetNotifier's
+		 * docblock) to swap the delivery mechanism without editing this class.
+		 * Falls back to LogPasswordResetNotifier when nothing is registered, so
+		 * the forgot-password flow still works out of the box.
+		 * @param Container $container
+		 * @param PasswordResetNotifierInterface|null $passwordResetNotifier
+		 */
+		public function __construct(Container $container, ?PasswordResetNotifierInterface $passwordResetNotifier = null) {
+			parent::__construct($container);
+			$this->passwordResetNotifier = $passwordResetNotifier ?? new LogPasswordResetNotifier();
+		}
 
 		/**
 		 * Display the login form
@@ -219,8 +243,7 @@
 				$this->em()->persist($token);
 				$this->em()->flush();
 
-				// Swap for a real email-sending PasswordResetNotifierInterface before production
-				(new LogPasswordResetNotifier())->send($user->getUsername(), $rawToken);
+				$this->passwordResetNotifier->send($user->getUsername(), $rawToken);
 			}
 
 			return $this->render('forgot_password.{{ template_ext }}', [

@@ -126,7 +126,9 @@
 			$this->output->writeLn("");
 			$this->output->writeLn("4. The forgot-password flow (src/Controllers/AuthenticationController.php) ships");
 			$this->output->writeLn("   with src/Notifiers/LogPasswordResetNotifier.php, which writes the reset link to");
-			$this->output->writeLn("   the error log instead of emailing it. Replace it with a real mailer-backed");
-			$this->output->writeLn("   App\\Contracts\\PasswordResetNotifierInterface implementation before going to production.");
+			$this->output->writeLn("   the error log instead of emailing it. Before going to production, write a real");
+			$this->output->writeLn("   mailer-backed App\\Contracts\\PasswordResetNotifierInterface implementation and");
+			$this->output->writeLn("   register a DI service provider for it — AuthenticationController picks it up");
+			$this->output->writeLn("   automatically, no controller edit needed.");
 		}
 	}
