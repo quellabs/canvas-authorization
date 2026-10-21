@@ -6,8 +6,8 @@ use App\Controllers\OidcAuthenticationController;
 use App\Services\OidcLocalAccountService;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Quellabs\CanvasAuthorization\Identity\OidcIdentityRepository;
-use Quellabs\CanvasAuthorization\Oidc\OidcClient;
+use Quellabs\CanvasAuthorization\Identity\OidcIdentityRepositoryInterface;
+use Quellabs\CanvasAuthorization\Oidc\OidcClientInterface;
 use Quellabs\CanvasAuthorization\Oidc\OidcConfig;
 use Quellabs\CanvasAuthorization\Tests\Fixtures\FakeConfigProvider;
 use Quellabs\DependencyInjection\Container;
@@ -47,9 +47,9 @@ class OidcDisabledRoutesTest extends TestCase {
         $config = new OidcConfig(new FakeConfigProvider(['oidc.php' => ['enabled' => false]]));
         $controller = new OidcAuthenticationController(
             $this->createMock(Container::class),
-            $this->createMock(OidcClient::class),
+            $this->createMock(OidcClientInterface::class),
             $config,
-            $this->createMock(OidcIdentityRepository::class),
+            $this->createMock(OidcIdentityRepositoryInterface::class),
             $this->createMock(OidcLocalAccountService::class)
         );
         $request = Request::create($path, $method);

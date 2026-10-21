@@ -4,7 +4,7 @@
 
 	use Quellabs\Contracts\Configuration\ConfigProviderInterface;
 	use Quellabs\Contracts\Context\MethodContextInterface;
-	use Quellabs\DependencyInjection\ContainerLocator;
+	use Quellabs\Contracts\DependencyInjection\ContainerInterface;
 	use Quellabs\DependencyInjection\Provider\ServiceProvider as DependencyInjectionServiceProvider;
 	use Quellabs\CanvasAuthorization\Identity\OidcIdentityRepository;
 	use Quellabs\CanvasAuthorization\Identity\OidcIdentityRepositoryInterface;
@@ -18,25 +18,12 @@
 	 * OidcIdentityRepositoryInterface with Canvas's DI container, discovered
 	 * through composer.json's extra.discover.di.provider key.
 	 *
-	 * A custom DI provider has no direct access to the container through its
-	 * constructor or createInstance() parameters — the discovery mechanism
-	 * instantiates providers with `new $class()`, and interface resolution
-	 * skips autowiring entirely (see Quellabs\DependencyInjection\Container::
-	 * createInstance()). ContainerLocator::getInstance() is the documented
-	 * way to reach the shared container from here instead.
+	 * Canvas injects its active container when it discovers this provider.
+	 * Resolve other services lazily because the framework registers some of
+	 * their bindings after provider discovery.
 	 *
-	 * Neither OidcClient nor OidcIdentityRepository actually needs this
-	 * provider to be constructed: both have sensible defaults for every
-	 * constructor parameter that isn't itself resolvable through the
-	 * container's own concrete-class autowiring (OidcConfig autowires from
-	 * ConfigProviderInterface the same way JwtAuthenticationAspect's
-	 * constructor parameter already does). This provider exists only so
-	 * that application code can depend on the package-owned interfaces —
-	 * OidcClientInterface, OidcIdentityRepositoryInterface — rather than the
-	 * concrete classes, and still resolve through the container. An
-	 * application that wants a different implementation registers its own
-	 * provider for the same interface; Canvas tries providers in
-	 * registration order and falls back to the default only when none claims it.
+	 * Application code can depend on these interfaces while Canvas supplies
+	 * the default implementations.
 	 */
 	class OidcServiceProvider extends DependencyInjectionServiceProvider {
 
@@ -45,14 +32,30 @@
 		 */
 		private const string IDENTITY_ENTITY_CLASS = 'App\\Entities\\OidcIdentityEntity';
 
+		/** @var ContainerInterface Container */
+		private ContainerInterface $container;
+
 		/**
-		 * Claims OidcClientInterface and OidcIdentityRepositoryInterface only.
+		 * Keep the container used by the Canvas application.
+		 * @param ContainerInterface $container
+		 */
+		public function __construct(ContainerInterface $container) {
+			$this->container = $container;
+		}
+
+		/**
+		 * Claim the OIDC interfaces for unscoped or explicitly OIDC requests.
 		 * @param string $className
 		 * @param array<string, mixed> $metadata
 		 * @return bool
 		 */
 		public function supports(string $className, array $metadata): bool {
-			return $className === OidcClientInterface::class || $className === OidcIdentityRepositoryInterface::class;
+			if ($className !== OidcClientInterface::class && $className !== OidcIdentityRepositoryInterface::class) {
+				return false;
+			}
+
+			$context = $metadata['context'] ?? null;
+			return $context === null || $context === '' || $context === 'oidc';
 		}
 
 		/**
@@ -64,16 +67,14 @@
 		 * @return object
 		 */
 		public function createInstance(string $className, array $dependencies, array $metadata, ?MethodContextInterface $methodContext = null): object {
-			$container = ContainerLocator::getInstance();
-
 			if ($className === OidcIdentityRepositoryInterface::class) {
 				/** @var EntityManager $entityManager */
-				$entityManager = $container->get(EntityManager::class);
+				$entityManager = $this->container->get(EntityManager::class);
 				return new OidcIdentityRepository($entityManager, self::IDENTITY_ENTITY_CLASS);
 			}
 
 			/** @var ConfigProviderInterface $configLoader */
-			$configLoader = $container->get(ConfigProviderInterface::class);
+			$configLoader = $this->container->get(ConfigProviderInterface::class);
 			return new OidcClient(new OidcConfig($configLoader));
 		}
 	}

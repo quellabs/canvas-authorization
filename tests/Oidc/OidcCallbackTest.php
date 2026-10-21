@@ -8,9 +8,9 @@ use App\Services\OidcLocalAccountService;
 use PHPUnit\Framework\TestCase;
 use Quellabs\CanvasAuthorization\Flow\OidcFlowStore;
 use Quellabs\CanvasAuthorization\Flow\PendingFlow;
-use Quellabs\CanvasAuthorization\Identity\OidcIdentityRepository;
+use Quellabs\CanvasAuthorization\Identity\OidcIdentityRepositoryInterface;
 use Quellabs\CanvasAuthorization\Oidc\IdTokenClaims;
-use Quellabs\CanvasAuthorization\Oidc\OidcClient;
+use Quellabs\CanvasAuthorization\Oidc\OidcClientInterface;
 use Quellabs\CanvasAuthorization\Oidc\OidcConfig;
 use Quellabs\CanvasAuthorization\Tests\Fixtures\FakeConfigProvider;
 use Quellabs\DependencyInjection\Container;
@@ -70,12 +70,12 @@ class OidcCallbackTest extends TestCase {
         $session->set('user_validated_at', time());
         $authTime = time() - 30;
 
-        $client = $this->createMock(OidcClient::class);
+        $client = $this->createMock(OidcClientInterface::class);
         $client->expects($this->once())
             ->method('exchangeAuthorizationCode')
             ->with('code-123', 'verifier-123', 'nonce-123')
             ->willReturn($this->claims($authTime));
-        $repository = $this->createMock(OidcIdentityRepository::class);
+        $repository = $this->createMock(OidcIdentityRepositoryInterface::class);
         $repository->expects($this->once())
             ->method('findLocalUserId')
             ->with('https://idp.example.test', 'subject-123')
@@ -101,9 +101,9 @@ class OidcCallbackTest extends TestCase {
     public function testUnlinkedIdentityCreatesOnlyAPendingCompletion(): void {
         $flowStore = new OidcFlowStore();
         [$request, $session] = $this->callbackRequest($flowStore);
-        $client = $this->createMock(OidcClient::class);
+        $client = $this->createMock(OidcClientInterface::class);
         $client->method('exchangeAuthorizationCode')->willReturn($this->claims(null));
-        $repository = $this->createMock(OidcIdentityRepository::class);
+        $repository = $this->createMock(OidcIdentityRepositoryInterface::class);
         $repository->method('findLocalUserId')->willReturn(null);
         $repository->expects($this->never())->method('link');
         $accounts = $this->createMock(OidcLocalAccountService::class);
