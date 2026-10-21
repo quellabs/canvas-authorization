@@ -427,6 +427,19 @@
 			$client->exchangeAuthorizationCode('auth-code', 'verifier', 'test-nonce');
 		}
 
+		/**
+		 * A future provider authentication time must not satisfy step-up freshness.
+		 * @return void
+		 */
+		public function testFutureAuthTimeIsRejected(): void {
+			$idToken = $this->signRs256(self::$privateJwk, self::KID, $this->validClaims(['auth_time' => time() + 3600]));
+			$client = $this->makeClient(idToken: $idToken);
+
+			$this->expectException(InvalidIdTokenException::class);
+			$this->expectExceptionMessage('auth_time claim is in the future');
+			$client->exchangeAuthorizationCode('auth-code', 'verifier', 'test-nonce');
+		}
+
 		public function testMismatchedNonceIsRejected(): void {
 			$idToken = $this->signRs256(self::$privateJwk, self::KID, $this->validClaims(['nonce' => 'wrong-nonce']));
 			$client = $this->makeClient(idToken: $idToken);

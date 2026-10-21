@@ -4,8 +4,13 @@
 
 	use App\Entities\OidcIdentityEntity;
 	use App\Entities\UserEntity;
+	use App\Exceptions\UserCreationException;
+	use App\Services\OidcLocalAccountService;
 	use Quellabs\CanvasAuthorization\Identity\Exceptions\OidcIdentityConflictException;
 	use Quellabs\CanvasAuthorization\Identity\OidcIdentityRepository;
+
+	require_once dirname(__DIR__, 2) . '/stubs/Exceptions/UserCreationException.php';
+	require_once dirname(__DIR__, 2) . '/stubs/Services/OidcLocalAccountService.php';
 
 	/**
 	 * Exercises OidcIdentityRepository against a real MySQL connection and
@@ -151,5 +156,29 @@
 			)->fetchAssoc();
 
 			$this->assertSame(0, (int)$row['c']);
+		}
+
+		/**
+		 * A unique-username race surfaces as a catchable registration conflict and leaves the entity manager usable.
+		 * @return void
+		 */
+		public function testDuplicateUsernameDuringUserFlushCanBeRolledBackAndDoesNotPoisonLaterInserts(): void {
+			$this->createUser('taken@example.test');
+			$service = new OidcLocalAccountService($this->em);
+			$connection = $this->em->getConnection();
+			$connection->beginTrans();
+
+			try {
+				$service->createLocalAccount('Another User', 'taken@example.test', 'password-123');
+				$this->fail('Expected UserCreationException for the duplicate username.');
+			} catch (UserCreationException $e) {
+				$this->assertNotNull($e->getPrevious());
+			} finally {
+				$connection->rollbackTrans();
+			}
+
+			$availableUser = $service->createLocalAccount('Available User', 'available@example.test', 'password-123');
+			$this->assertNotNull($availableUser->getId());
+			$this->assertCount(1, $this->em->findBy(UserEntity::class, ['username' => 'taken@example.test']));
 		}
 	}
