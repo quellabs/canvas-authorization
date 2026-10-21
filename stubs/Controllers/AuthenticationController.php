@@ -8,6 +8,7 @@
 	use App\Exceptions\UserCreationException;
 	use App\Notifiers\LogPasswordResetNotifier;
 	use Quellabs\Canvas\Annotations\Route;
+	use Quellabs\CanvasAuthorization\Oidc\OidcConfig;
 	use Quellabs\DependencyInjection\Container;
 	use Quellabs\ObjectQuel\ObjectQuel\QuelException;
 	use Quellabs\ObjectQuel\OrmException;
@@ -31,6 +32,11 @@
 		private PasswordResetNotifierInterface $passwordResetNotifier;
 
 		/**
+		 * @var OidcConfig
+		 */
+		private OidcConfig $oidcConfig;
+
+		/**
 		 * AuthenticationController constructor
 		 *
 		 * $passwordResetNotifier is resolved through the DI container like any
@@ -39,11 +45,18 @@
 		 * docblock) to swap the delivery mechanism without editing this class.
 		 * Falls back to LogPasswordResetNotifier when nothing is registered, so
 		 * the forgot-password flow still works out of the box.
+		 *
+		 * $oidcConfig is present only to let login() show an OIDC button when
+		 * install:auth-oidc has configured it in combined mode — this class
+		 * has no other OIDC awareness and is never installed at all for a
+		 * fresh oidc_only application.
 		 * @param Container $container
+		 * @param OidcConfig $oidcConfig
 		 * @param PasswordResetNotifierInterface|null $passwordResetNotifier
 		 */
-		public function __construct(Container $container, ?PasswordResetNotifierInterface $passwordResetNotifier = null) {
+		public function __construct(Container $container, OidcConfig $oidcConfig, ?PasswordResetNotifierInterface $passwordResetNotifier = null) {
 			parent::__construct($container);
+			$this->oidcConfig = $oidcConfig;
 			$this->passwordResetNotifier = $passwordResetNotifier ?? new LogPasswordResetNotifier();
 		}
 
@@ -58,12 +71,16 @@
 			if (!empty($request->getSession()->get('auth_user_id'))) {
 				return new RedirectResponse('/');
 			}
-			
+
+			$oidcEnabled = $this->oidcConfig->isEnabled() && $this->oidcConfig->getLoginMode() === 'password_and_oidc';
+
 			return $this->render('login.{{ template_ext }}', [
-				'errors' => []
+				'errors'      => [],
+				'oidcEnabled' => $oidcEnabled,
+				'oidcStartUrl' => $oidcEnabled ? '/auth/oidc/start' : null,
 			]);
 		}
-		
+
 		/**
 		 * Log out the current user
 		 * @Route("/logout", methods={"POST", "GET"})

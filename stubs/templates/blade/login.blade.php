@@ -248,6 +248,16 @@
         </a>
     </form>
 
+    @if($oidcEnabled ?? false)
+        <div class="divider">
+            <span>or</span>
+        </div>
+
+        <a href="{{ $oidcStartUrl }}" class="btn" style="display:block;background-color:#21262d;border-color:#30363d;text-decoration:none;">
+            Sign in with your organization
+        </a>
+    @endif
+
     <div class="divider">
         <span>or</span>
     </div>

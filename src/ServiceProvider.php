@@ -14,7 +14,8 @@
 		public function register(Application $application): void {
 			$this->registerCommands($application, [
 				MakeAuthCommand::class,
-				MakeAuthAspectCommand::class
+				MakeAuthAspectCommand::class,
+				MakeAuthOidcCommand::class
 			]);
 		}
 	}
