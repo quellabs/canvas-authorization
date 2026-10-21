@@ -59,3 +59,6 @@ php ./vendor/bin/phpunit -c phpunit.integration.xml
 
 The integration suite requires MySQL. Connection settings and defaults are in
 [OIDC.md](OIDC.md#running-the-test-suites).
+
+For a browser test against a local OIDC provider using the generated installer
+files and migrations, see [tests/E2E/README.md](tests/E2E/README.md).

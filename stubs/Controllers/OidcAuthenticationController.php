@@ -14,11 +14,13 @@
 	use Quellabs\CanvasAuthorization\Flow\PendingFlow;
 	use Quellabs\CanvasAuthorization\Flow\ReturnPathValidator;
 	use Quellabs\CanvasAuthorization\Identity\Exceptions\OidcIdentityConflictException;
+	use Quellabs\CanvasAuthorization\Identity\OidcIdentityRepository;
 	use Quellabs\CanvasAuthorization\Identity\OidcIdentityRepositoryInterface;
 	use Quellabs\CanvasAuthorization\Identity\OidcLoginSession;
 	use Quellabs\CanvasAuthorization\Oidc\Exceptions\InvalidIdTokenException;
 	use Quellabs\CanvasAuthorization\Oidc\Exceptions\OidcDiscoveryException;
 	use Quellabs\CanvasAuthorization\Oidc\Exceptions\OidcTokenExchangeException;
+	use Quellabs\CanvasAuthorization\Oidc\OidcClient;
 	use Quellabs\CanvasAuthorization\Oidc\OidcClientInterface;
 	use Quellabs\CanvasAuthorization\Oidc\OidcConfig;
 	use Quellabs\CanvasAuthorization\SessionAuthenticationAspect;
@@ -64,9 +66,9 @@
 		/**
 		 * OidcAuthenticationController constructor
 		 * @param Container $container
-		 * @param OidcClientInterface $oidcClient
+		 * @param OidcClient $oidcClient
 		 * @param OidcConfig $oidcConfig
-		 * @param OidcIdentityRepositoryInterface $identityRepository
+		 * @param OidcIdentityRepository $identityRepository
 		 * @param OidcLocalAccountService $localAccountService
 		 * @param OidcFlowStore|null $flowStore Stateless; defaults to a new instance when DI doesn't supply one.
 		 * @param OidcLoginSession|null $oidcLoginSession Stateless; defaults to a new instance when DI doesn't supply one.
@@ -74,9 +76,9 @@
 		 */
 		public function __construct(
 			Container                       $container,
-			OidcClientInterface             $oidcClient,
+			OidcClient                      $oidcClient,
 			OidcConfig                      $oidcConfig,
-			OidcIdentityRepositoryInterface $identityRepository,
+			OidcIdentityRepository          $identityRepository,
 			OidcLocalAccountService         $localAccountService,
 			?OidcFlowStore                  $flowStore = null,
 			?OidcLoginSession               $oidcLoginSession = null,

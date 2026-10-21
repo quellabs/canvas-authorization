@@ -1,0 +1,16 @@
+/vendor/
+/config/discovery-mapping.php
+/config/oidc.php
+/config/oidc.local.php
+/src/Controllers/*
+!/src/Controllers/TestStatusController.php
+/src/Entities/
+/src/Services/
+/src/Errors/
+/src/Exceptions/
+/src/Validation/
+/src/Contracts/
+/src/Notifiers/
+/templates/
+/migrations/
+/storage/

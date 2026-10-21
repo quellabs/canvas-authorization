@@ -1,0 +1,24 @@
+{
+  "name": "quellabs/canvas-authorization-e2e",
+  "type": "project",
+  "require": {
+    "php": "^8.3",
+    "quellabs/canvas-authorization": "*",
+    "quellabs/canvas-objectquel": "^1.0"
+  },
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../../..",
+      "options": { "symlink": true }
+    }
+  ],
+  "autoload": {
+    "psr-4": { "App\\": "src/" }
+  },
+  "config": {
+    "allow-plugins": { "quellabs/discover": true }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
