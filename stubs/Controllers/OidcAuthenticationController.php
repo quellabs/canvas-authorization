@@ -2,6 +2,7 @@
 
 	namespace App\Controllers;
 
+	use App\Exceptions\UserCreationException;
 	use App\Services\OidcLocalAccountService;
 	use Quellabs\Canvas\Annotations\InterceptWith;
 	use Quellabs\Canvas\Annotations\Route;
@@ -102,8 +103,8 @@
 		 * @throws TemplateRenderException
 		 */
 		public function start(Request $request): Response {
-			if (!$this->oidcConfig->isEnabled()) {
-				return new Response('Not Found', 404);
+			if (($response = $this->disabledResponse()) !== null) {
+				return $response;
 			}
 
 			$session = $request->getSession();
@@ -126,6 +127,10 @@
 		 * @throws TemplateRenderException
 		 */
 		public function callback(Request $request): Response {
+			if (($response = $this->disabledResponse()) !== null) {
+				return $response;
+			}
+
 			$session = $request->getSession();
 			$state = (string)$request->query->get('state', '');
 
@@ -190,6 +195,10 @@
 		 * @throws TemplateRenderException
 		 */
 		public function complete(Request $request): Response {
+			if (($response = $this->disabledResponse()) !== null) {
+				return $response;
+			}
+
 			$completion = $this->flowStore->peekCompletion($request->getSession());
 
 			if ($completion === null) {
@@ -215,6 +224,10 @@
 		 * @throws TemplateRenderException
 		 */
 		public function completeWithExistingAccount(Request $request): Response {
+			if (($response = $this->disabledResponse()) !== null) {
+				return $response;
+			}
+
 			if ($this->oidcConfig->getLoginMode() === 'oidc_only') {
 				return new Response('Not Found', 404);
 			}
@@ -266,7 +279,10 @@
 		 * pending identity to it. OIDC-only mode: create an opaque profile
 		 * on explicit confirmation, no form fields involved. Either way,
 		 * the new user and the identity link are created in one transaction
-		 * — see OidcLocalAccountService's docblock.
+		 * — see OidcLocalAccountService's docblock. The pre-check below is
+		 * only a fast path: a concurrent request can still win the race on
+		 * UserEntity's unique username index, so the transaction itself must
+		 * also handle that failure, not just an identity-link conflict.
 		 * @Route("/auth/oidc/complete/register", methods={"POST"})
 		 * @InterceptWith(CsrfProtectionAspect::class, throwOnFailure=true)
 		 * @param Request $request
@@ -274,6 +290,10 @@
 		 * @throws TemplateRenderException
 		 */
 		public function completeWithRegistration(Request $request): Response {
+			if (($response = $this->disabledResponse()) !== null) {
+				return $response;
+			}
+
 			$session = $request->getSession();
 			$completion = $this->flowStore->peekCompletion($session);
 
@@ -338,12 +358,12 @@
 				$this->identityRepository->link($completion->getIssuer(), $completion->getSubject(), $user->getId());
 				$connection->commitTrans();
 			} catch (OidcIdentityConflictException) {
-				// A uniqueness conflict rolls back both inserts, so the new
-				// user row never survives either. Rolling back the DB
-				// transaction doesn't by itself clear EntityManager's
-				// identity map — detach() avoids a request later in the
-				// same process (a persistent worker) resolving this user ID
-				// to a "ghost" entity that no longer exists in the database.
+				// The identity link lost the race (the user row above was
+				// flushed successfully). Rolling back the DB transaction
+				// doesn't by itself clear EntityManager's identity map —
+				// detach() avoids a request later in the same process (a
+				// persistent worker) resolving this user ID to a "ghost"
+				// entity that no longer exists in the database.
 				$connection->rollbackTrans();
 
 				if (isset($user)) {
@@ -351,6 +371,13 @@
 				}
 
 				return $this->renderGenericFailure('identity_conflict');
+			} catch (UserCreationException) {
+				// The user row itself lost the race (a concurrent request
+				// claimed $username first) — createLocalAccount()/
+				// createOidcOnlyProfile() already detached their own failed
+				// entity, so $user was never assigned here.
+				$connection->rollbackTrans();
+				return $this->renderGenericFailure('registration_conflict');
 			}
 
 			$this->oidcLoginSession->establish($session, $user->getId(), time(), $oidcOnly ? [] : ['pwd']);
@@ -372,6 +399,10 @@
 		 * @throws TemplateRenderException
 		 */
 		public function linkStart(Request $request): Response {
+			if (($response = $this->disabledResponse()) !== null) {
+				return $response;
+			}
+
 			$session = $request->getSession();
 			$userId = $request->attributes->get('session_user_id');
 			$user = $this->localAccountService->findById($userId);
@@ -536,6 +567,17 @@
 			}
 
 			return new RedirectResponse('/');
+		}
+
+		/**
+		 * Gate every OIDC route on the config flag, not just start() — a
+		 * pending callback, completion, or link-start left reachable after
+		 * OIDC is disabled would let a flow already underway still establish
+		 * a session, contrary to the plan's rollback instructions.
+		 * @return Response|null A 404 response when disabled, null when enabled.
+		 */
+		private function disabledResponse(): ?Response {
+			return $this->oidcConfig->isEnabled() ? null : new Response('Not Found', 404);
 		}
 
 		/**

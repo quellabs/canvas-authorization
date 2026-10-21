@@ -167,9 +167,9 @@
 		 * Report an eligibility failure via the configured failure mode.
 		 * @param Request $request
 		 * @param string $reason Reason the account is not eligible
-		 * @return Response|null Always null — attribute mode never short-circuits via Response.
+		 * @return null Always null — attribute mode never short-circuits via Response.
 		 */
-		private function fail(Request $request, string $reason): ?Response {
+		private function fail(Request $request, string $reason): null {
 			if ($this->throwOnFailure) {
 				throw new AccountEligibilityException($reason);
 			}

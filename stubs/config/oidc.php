@@ -19,7 +19,7 @@
 
 		// 'password_and_oidc' offers local password login and OIDC side by
 		// side; 'oidc_only' offers only OIDC login.
-		'login_mode' => 'password_and_oidc',
+		'login_mode' => '{{ login_mode }}',
 
 		// ID-token signing algorithms this application accepts. Only RS256
 		// is supported in this release.

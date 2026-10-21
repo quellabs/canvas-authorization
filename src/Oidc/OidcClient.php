@@ -447,6 +447,13 @@
 				throw new InvalidIdTokenException('ID token auth_time claim is invalid.');
 			}
 
+			// A future auth_time would let StepUpAuthenticationAspect's
+			// (time() - auth_time) <= maxAge check pass indefinitely once that
+			// time arrives, so it's rejected the same way a future iat is above
+			if ($authTime !== null && (int)$authTime > ($now + self::CLOCK_SKEW_SECONDS)) {
+				throw new InvalidIdTokenException('ID token auth_time claim is in the future.');
+			}
+
 			return new IdTokenClaims(
 				$issuer,
 				$subject,

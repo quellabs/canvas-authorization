@@ -3,7 +3,9 @@
 	namespace App\Controllers;
 
 	use Quellabs\Canvas\Annotations\Route;
+	use Quellabs\Canvas\Annotations\InterceptWith;
 	use Quellabs\Canvas\Controllers\BaseController;
+	use Quellabs\Canvas\Security\CsrfProtectionAspect;
 	use Symfony\Component\HttpFoundation\RedirectResponse;
 	use Symfony\Component\HttpFoundation\Request;
 	use Symfony\Component\HttpFoundation\Response;
@@ -39,7 +41,8 @@
 		}
 
 		/**
-		 * @Route("/logout", methods={"POST", "GET"})
+		 * @Route("/logout", methods={"POST"})
+		 * @InterceptWith(CsrfProtectionAspect::class, throwOnFailure=true)
 		 * @param Request $request
 		 * @return Response
 		 */

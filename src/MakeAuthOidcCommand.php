@@ -16,10 +16,10 @@
 	 * want both.
 	 *
 	 * --mode=oidc_only additionally generates the shared UserEntity,
-	 * AuthenticatedController, AuthErrorHandler, and an OIDC-only /login +
-	 * /logout — the same files install:auth would generate, since an
-	 * oidc_only application skips install:auth entirely. Refuses to run
-	 * when src/Controllers/AuthenticationController.php already exists, so
+	 * AuthenticatedController, AuthErrorHandler, UserCreationException, and
+	 * an OIDC-only /login + /logout — the same files install:auth would
+	 * generate, since an oidc_only application skips install:auth entirely.
+	 * Refuses to run when src/Controllers/AuthenticationController.php already exists, so
 	 * a combined install never ends up with two controllers both claiming
 	 * /login and /logout.
 	 */
@@ -95,11 +95,30 @@
 		}
 
 		/**
+		 * Returns token list
+		 * @return array|string[]
+		 */
+		protected function getTokens(): array {
+			return array_merge(parent::getTokens(), [
+				'{{ template_ext }}' => $this->resolveTemplateExtension(),
+				'{{ login_mode }}'   => $this->mode,
+			]);
+		}
+
+		/**
+		 * Resolves the file extension used by the configured template engine.
+		 * @return string
+		 */
+		private function resolveTemplateExtension(): string {
+			return self::TEMPLATE_EXTENSIONS[$this->resolveTemplateEngine()] ?? 'tpl';
+		}
+
+		/**
 		 * @return array<string, string>
 		 */
 		protected function getStubs(): array {
 			$engine = $this->resolveTemplateEngine();
-			$ext = self::TEMPLATE_EXTENSIONS[$engine] ?? 'tpl';
+			$ext = $this->resolveTemplateExtension();
 
 			$stubs = [
 				'Controllers/OidcAuthenticationController.php' => 'src/Controllers/OidcAuthenticationController.php',
@@ -113,10 +132,14 @@
 
 			if ($this->mode === 'oidc_only') {
 				// Same files install:auth generates — an oidc_only application
-				// skips install:auth entirely, so this is their only source
+				// skips install:auth entirely, so this is their only source.
+				// UserCreationException is included here too: OidcLocalAccountService
+				// throws it on a failed user flush, and a combined install already
+				// gets it from install:auth (a documented prerequisite of that mode)
 				$stubs['Entities/UserEntity.php'] = 'src/Entities/UserEntity.php';
 				$stubs['Controllers/AuthenticatedController.php'] = 'src/Controllers/AuthenticatedController.php';
 				$stubs['Errors/AuthErrorHandler.php'] = 'src/Errors/AuthErrorHandler.php';
+				$stubs['Exceptions/UserCreationException.php'] = 'src/Exceptions/UserCreationException.php';
 				$stubs['Controllers/OidcOnlyLoginController.php'] = 'src/Controllers/OidcOnlyLoginController.php';
 				$stubs["/templates/{$engine}/oidc_only_login.{$ext}"] = "templates/oidc_only_login.{$ext}";
 			}

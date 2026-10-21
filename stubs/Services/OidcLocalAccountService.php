@@ -3,8 +3,10 @@
 	namespace App\Services;
 
 	use App\Entities\UserEntity;
+	use App\Exceptions\UserCreationException;
 	use Quellabs\ObjectQuel\EntityManager;
 	use Quellabs\ObjectQuel\ObjectQuel\QuelException;
+	use Throwable;
 
 	/**
 	 * Bridges the package's OIDC protocol layer to this application's own
@@ -66,6 +68,7 @@
 		 * @param string $username
 		 * @param string $password
 		 * @return UserEntity Flushed — getId() returns the real, database-assigned ID.
+		 * @throws UserCreationException If the flush fails, e.g. a concurrent registration won the race on UserEntity's unique username index.
 		 */
 		public function createLocalAccount(string $name, string $username, string $password): UserEntity {
 			$user = new UserEntity();
@@ -73,10 +76,7 @@
 			$user->setUsername($username);
 			$user->setPassword(password_hash($password, PASSWORD_DEFAULT));
 
-			$this->entityManager->persist($user);
-			$this->entityManager->flush($user);
-
-			return $user;
+			return $this->persistAndFlush($user);
 		}
 
 		/**
@@ -86,6 +86,7 @@
 		 * linked OIDC identity until a separate verified password-setup
 		 * flow is completed.
 		 * @return UserEntity Flushed — getId() returns the real, database-assigned ID.
+		 * @throws UserCreationException If the flush fails, e.g. a colliding opaque username (astronomically unlikely, but handled the same way as createLocalAccount()).
 		 */
 		public function createOidcOnlyProfile(): UserEntity {
 			$user = new UserEntity();
@@ -93,10 +94,46 @@
 			$user->setUsername($this->generateOpaqueUsername());
 			$user->setPassword(password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT));
 
-			$this->entityManager->persist($user);
-			$this->entityManager->flush($user);
+			return $this->persistAndFlush($user);
+		}
+
+		/**
+		 * Persist and flush a new user, converting a failed flush (most
+		 * notably a concurrent request winning the race on UserEntity's
+		 * unique username index) into a UserCreationException instead of
+		 * letting the underlying ORM exception escape.
+		 * @param UserEntity $user
+		 * @return UserEntity Flushed — getId() returns the real, database-assigned ID.
+		 * @throws UserCreationException
+		 */
+		private function persistAndFlush(UserEntity $user): UserEntity {
+			try {
+				$this->entityManager->persist($user);
+				$this->entityManager->flush($user);
+			} catch (Throwable $e) {
+				// A failed flush leaves the entity scheduled in the unit of
+				// work rather than clearing it — left alone, it would be
+				// retried (and fail again) on the next unrelated flush() this
+				// EntityManager performs anywhere in the application, the same
+				// reasoning OidcIdentityRepository::link() applies to its record
+				$this->detachQuietly($user);
+				throw new UserCreationException('Failed to create user account.', 0, $e);
+			}
 
 			return $user;
+		}
+
+		/**
+		 * @param UserEntity $user
+		 * @return void
+		 */
+		private function detachQuietly(UserEntity $user): void {
+			try {
+				$this->entityManager->detach($user);
+			} catch (Throwable) {
+				// Best-effort cleanup only — the UserCreationException already
+				// being thrown is what matters to the caller
+			}
 		}
 
 		/**
