@@ -11,11 +11,10 @@
 	 * AuthenticationController, UserEntity, or local templates — see
 	 * getStubs() for exactly what it copies.
 	 *
-	 * --mode=password_and_oidc (default) adds OIDC alongside an existing
-	 * (or not-yet-installed) password login; run install:auth first if you
-	 * want both.
+	 * With an existing password AuthenticationController, adds OIDC alongside
+	 * password login. Otherwise, installs an OIDC-only login page.
 	 *
-	 * --mode=oidc_only additionally generates the shared UserEntity,
+	 * OIDC-only installation also generates the shared UserEntity,
 	 * AuthenticatedController, AuthErrorHandler, UserCreationException, and
 	 * an OIDC-only /login + /logout — the same files install:auth would
 	 * generate, since an oidc_only application skips install:auth entirely.
@@ -39,7 +38,7 @@
 		];
 
 		/**
-		 * Resolved from --mode once execute() runs; getStubs() reads it.
+		 * Resolved from the existing password controller or an explicit mode option.
 		 * @var string
 		 */
 		private string $mode = 'password_and_oidc';
@@ -63,7 +62,8 @@
 		 * @return int Exit code (0 = success, 1 = error)
 		 */
 		public function execute(ConfigurationManager $config): int {
-			$this->mode = $config->getAsString('mode', 'password_and_oidc');
+			$passwordControllerExists = $this->passwordControllerExists();
+			$this->mode = $config->getAsString('mode', $passwordControllerExists ? 'password_and_oidc' : 'oidc_only');
 
 			if (!in_array($this->mode, self::SUPPORTED_MODES, true)) {
 				$this->output->error(
@@ -72,12 +72,20 @@
 				return 1;
 			}
 
-			if ($this->mode === 'oidc_only' && $this->passwordControllerExists()) {
+			if ($this->mode === 'oidc_only' && $passwordControllerExists) {
 				$this->output->error(
 					"Refusing an oidc_only install: src/Controllers/AuthenticationController.php already exists. " .
 					"That controller and this install's OIDC-only login page would both claim /login and /logout. " .
 					"Install OIDC in combined mode instead (the default), link existing users via local sign-in, " .
 					"then remove the password routes and switch config/oidc.php's login_mode to 'oidc_only'."
+				);
+				return 1;
+			}
+
+			if ($this->mode === 'password_and_oidc' && !$passwordControllerExists) {
+				$this->output->error(
+					"Refusing a combined install: src/Controllers/AuthenticationController.php is missing. " .
+					"Run install:auth first, or run install:auth-oidc without --mode for OIDC-only login."
 				);
 				return 1;
 			}

@@ -4,6 +4,7 @@ namespace Quellabs\CanvasAuthorization\Tests\Oidc;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Quellabs\CanvasAuthorization\MakeAuthCommand;
 use Quellabs\CanvasAuthorization\MakeAuthOidcCommand;
 use Quellabs\CanvasAuthorization\ServiceProvider;
 use Quellabs\Contracts\IO\ConsoleInput;
@@ -84,7 +85,7 @@ class MakeAuthOidcCommandTest extends TestCase {
     }
 
     /**
-     * Generated files have the chosen login mode and resolvable view names.
+     * Installation detects the password controller and generates resolvable views.
      * @param string $engine
      * @param string $extension
      * @param string $mode
@@ -95,9 +96,16 @@ class MakeAuthOidcCommandTest extends TestCase {
         file_put_contents($this->projectRoot . '/config/app.php', '<?php return ' . var_export(['template_engine' => $engine], true) . ';');
         $input = $this->createMock(ConsoleInput::class);
         $output = $this->createMock(ConsoleOutput::class);
-        $command = new MakeAuthOidcCommand($input, $output, new ServiceProvider());
+        $provider = new ServiceProvider();
+        $passwordController = null;
 
-        $this->assertSame(0, $command->execute(new ConfigurationManager(["--mode={$mode}"])));
+        if ($mode === 'password_and_oidc') {
+            $this->assertSame(0, (new MakeAuthCommand($input, $output, $provider))->execute(new ConfigurationManager()));
+            $passwordController = file_get_contents($this->projectRoot . '/src/Controllers/AuthenticationController.php');
+        }
+
+        $command = new MakeAuthOidcCommand($input, $output, $provider);
+        $this->assertSame(0, $command->execute(new ConfigurationManager()));
 
         $oidcConfig = require $this->projectRoot . '/config/oidc.php';
         $controller = file_get_contents($this->projectRoot . '/src/Controllers/OidcAuthenticationController.php');
@@ -117,7 +125,43 @@ class MakeAuthOidcCommandTest extends TestCase {
             $this->assertFileDoesNotExist($this->projectRoot . '/src/Controllers/AuthenticationController.php');
         } else {
             $this->assertFileDoesNotExist($this->projectRoot . '/src/Controllers/OidcOnlyLoginController.php');
+            $this->assertSame($passwordController, file_get_contents($this->projectRoot . '/src/Controllers/AuthenticationController.php'));
         }
+    }
+
+    /**
+     * An explicit combined mode cannot leave an app without its password controller.
+     * @return void
+     */
+    public function testCombinedModeWithoutPasswordControllerIsRejectedBeforeWritingFiles(): void {
+        $command = new MakeAuthOidcCommand(
+            $this->createMock(ConsoleInput::class),
+            $this->createMock(ConsoleOutput::class),
+            new ServiceProvider()
+        );
+
+        $this->assertSame(1, $command->execute(new ConfigurationManager(['--mode=password_and_oidc'])));
+        $this->assertFileDoesNotExist($this->projectRoot . '/config/oidc.php');
+        $this->assertFileDoesNotExist($this->projectRoot . '/src/Controllers/OidcAuthenticationController.php');
+    }
+
+    /**
+     * An explicit OIDC-only mode cannot add a competing login controller.
+     * @return void
+     */
+    public function testOidcOnlyModeWithPasswordControllerIsRejectedBeforeWritingFiles(): void {
+        $controllerPath = $this->projectRoot . '/src/Controllers/AuthenticationController.php';
+        mkdir(dirname($controllerPath), 0755, true);
+        file_put_contents($controllerPath, '<?php // existing password controller');
+        $command = new MakeAuthOidcCommand(
+            $this->createMock(ConsoleInput::class),
+            $this->createMock(ConsoleOutput::class),
+            new ServiceProvider()
+        );
+
+        $this->assertSame(1, $command->execute(new ConfigurationManager(['--mode=oidc_only'])));
+        $this->assertFileDoesNotExist($this->projectRoot . '/config/oidc.php');
+        $this->assertFileDoesNotExist($this->projectRoot . '/src/Controllers/OidcOnlyLoginController.php');
     }
 
     /**

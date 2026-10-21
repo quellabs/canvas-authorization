@@ -37,13 +37,15 @@ controller `install:auth` already generated; it never overwrites `Authentication
 **OIDC-only login, fresh app:**
 
 ```
-php ./vendor/bin/sculpt install:auth-oidc --mode=oidc_only
+php ./vendor/bin/sculpt install:auth-oidc
 ```
 
-Skips `install:auth` entirely. Also generates the shared `UserEntity`,
+Run this without first running `install:auth`. The command detects that no password
+`AuthenticationController` exists and generates the shared `UserEntity`,
 `AuthenticatedController`, and `AuthErrorHandler`, plus an OIDC-only `/login` and `/logout`.
-Refuses to run if `src/Controllers/AuthenticationController.php` already exists, since that
-controller and the OIDC-only login page would both claim `/login` and `/logout`. To move an
+If `src/Controllers/AuthenticationController.php` already exists, the same command adds
+OIDC alongside password login instead, since an OIDC-only login page would claim the
+same `/login` and `/logout` routes. To move an
 existing combined-mode app to OIDC-only: keep combined mode, make sure every account that
 should keep working has a linked identity (ask users to link via `/auth/oidc/link/start`, or
 link them yourself — see **Administrative provisioning** below), then remove the password
