@@ -130,19 +130,36 @@
 		}
 
 		/**
-		 * @param array<string, mixed> $data As produced by toArray().
+		 * @param array<array-key, mixed> $data As produced by toArray() and read back from the session.
 		 * @return self
+		 * @throws \InvalidArgumentException When $data is missing a required field or has the wrong type for one — the session-stored data this reads back is never assumed trustworthy.
 		 */
 		public static function fromArray(array $data): self {
-			return new self(
-				(string)$data['state'],
-				(string)$data['nonce'],
-				(string)$data['code_verifier'],
-				(int)$data['issued_at'],
-				(string)$data['intent'],
-				$data['initiating_local_user_id'] ?? null,
-				isset($data['password_confirmed_at']) ? (int)$data['password_confirmed_at'] : null,
-				isset($data['return_path']) ? (string)$data['return_path'] : null
-			);
+			$state = $data['state'] ?? null;
+			$nonce = $data['nonce'] ?? null;
+			$codeVerifier = $data['code_verifier'] ?? null;
+			$issuedAt = $data['issued_at'] ?? null;
+			$intent = $data['intent'] ?? null;
+			$initiatingLocalUserId = $data['initiating_local_user_id'] ?? null;
+			$passwordConfirmedAt = $data['password_confirmed_at'] ?? null;
+			$returnPath = $data['return_path'] ?? null;
+
+			if (!is_string($state) || !is_string($nonce) || !is_string($codeVerifier) || !is_int($issuedAt) || !is_string($intent)) {
+				throw new \InvalidArgumentException('Malformed PendingFlow data.');
+			}
+
+			if ($initiatingLocalUserId !== null && !is_int($initiatingLocalUserId) && !is_string($initiatingLocalUserId)) {
+				throw new \InvalidArgumentException('Malformed PendingFlow data: initiating_local_user_id.');
+			}
+
+			if ($passwordConfirmedAt !== null && !is_int($passwordConfirmedAt)) {
+				throw new \InvalidArgumentException('Malformed PendingFlow data: password_confirmed_at.');
+			}
+
+			if ($returnPath !== null && !is_string($returnPath)) {
+				throw new \InvalidArgumentException('Malformed PendingFlow data: return_path.');
+			}
+
+			return new self($state, $nonce, $codeVerifier, $issuedAt, $intent, $initiatingLocalUserId, $passwordConfirmedAt, $returnPath);
 		}
 	}

@@ -48,6 +48,8 @@
 		private string $clientId;
 		private string $clientSecret;
 		private string $redirectUri;
+
+		/** @var string[] */
 		private array $allowedSigningAlgorithms;
 		private string $loginMode;
 		private bool $allowPrivateNetworkEndpoints;

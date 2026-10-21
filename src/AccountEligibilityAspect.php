@@ -131,14 +131,15 @@
 			// absence means there is no logged-in session at all
 			$userId = $request->attributes->get('session_user_id');
 
-			if ($userId === null) {
+			if ($userId === null || (!is_int($userId) && !is_string($userId))) {
 				return $this->fail($request, 'No authenticated session');
 			}
 
 			// Only hit the database if we haven't validated recently, to avoid a
 			// query on every single request from an already-checked-out user
 			$session = $request->getSession();
-			$lastValidated = $session->get('user_validated_at', 0);
+			$lastValidatedRaw = $session->get('user_validated_at', 0);
+			$lastValidated = is_int($lastValidatedRaw) ? $lastValidatedRaw : 0;
 			$currentTime = time();
 
 			if ($currentTime - $lastValidated > $this->validationInterval) {

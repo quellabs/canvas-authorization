@@ -71,15 +71,24 @@
 		}
 
 		/**
-		 * @param array<string, mixed> $data As produced by toArray().
+		 * @param array<array-key, mixed> $data As produced by toArray() and read back from the session.
 		 * @return self
+		 * @throws \InvalidArgumentException When $data is missing a required field or has the wrong type for one — the session-stored data this reads back is never assumed trustworthy.
 		 */
 		public static function fromArray(array $data): self {
-			return new self(
-				(string)$data['issuer'],
-				(string)$data['subject'],
-				(int)$data['issued_at'],
-				isset($data['return_path']) ? (string)$data['return_path'] : null
-			);
+			$issuer = $data['issuer'] ?? null;
+			$subject = $data['subject'] ?? null;
+			$issuedAt = $data['issued_at'] ?? null;
+			$returnPath = $data['return_path'] ?? null;
+
+			if (!is_string($issuer) || !is_string($subject) || !is_int($issuedAt)) {
+				throw new \InvalidArgumentException('Malformed PendingCompletion data.');
+			}
+
+			if ($returnPath !== null && !is_string($returnPath)) {
+				throw new \InvalidArgumentException('Malformed PendingCompletion data: return_path.');
+			}
+
+			return new self($issuer, $subject, $issuedAt, $returnPath);
 		}
 	}

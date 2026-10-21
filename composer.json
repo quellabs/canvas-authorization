@@ -46,6 +46,7 @@
   },
   "require-dev": {
     "cakephp/database": "^5.0",
+    "phpstan/phpstan": "^2.0",
     "phpunit/phpunit": "^11.0"
   },
   "autoload": {

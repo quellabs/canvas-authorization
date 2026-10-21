@@ -63,7 +63,7 @@
 		 * @return int Exit code (0 = success, 1 = error)
 		 */
 		public function execute(ConfigurationManager $config): int {
-			$this->mode = (string)$config->get('mode', 'password_and_oidc');
+			$this->mode = $config->getAsString('mode', 'password_and_oidc');
 
 			if (!in_array($this->mode, self::SUPPORTED_MODES, true)) {
 				$this->output->error(

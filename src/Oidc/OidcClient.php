@@ -59,6 +59,7 @@
 		private HttpClientInterface $httpClient;
 		private HostResolverInterface $hostResolver;
 
+		/** @var array<string, mixed>|null */
 		private ?array $cachedMetadata = null;
 		private ?int $metadataFetchedAt = null;
 		private ?JWKSet $cachedJwkSet = null;
@@ -100,8 +101,9 @@
 				'code_challenge_method' => 'S256',
 			];
 
-			$separator = str_contains($metadata['authorization_endpoint'], '?') ? '&' : '?';
-			$url = $metadata['authorization_endpoint'] . $separator . http_build_query($query);
+			$authorizationEndpoint = $this->requireStringField($metadata, 'authorization_endpoint');
+			$separator = str_contains($authorizationEndpoint, '?') ? '&' : '?';
+			$url = $authorizationEndpoint . $separator . http_build_query($query);
 
 			return new AuthorizationRequest($url, $codeVerifier);
 		}
@@ -119,7 +121,8 @@
 		public function exchangeAuthorizationCode(string $code, string $codeVerifier, string $expectedNonce): IdTokenClaims {
 			$metadata = $this->getDiscoveryMetadata(false);
 
-			$tokenResponse = $this->postTokenRequest($metadata['token_endpoint'], [
+			$tokenEndpoint = $this->requireStringField($metadata, 'token_endpoint');
+			$tokenResponse = $this->postTokenRequest($tokenEndpoint, [
 				'grant_type'    => 'authorization_code',
 				'code'          => $code,
 				'redirect_uri'  => $this->config->getRedirectUri(),
@@ -185,9 +188,11 @@
 				}
 			}
 
-			if ($metadata['issuer'] !== $this->config->getIssuer()) {
+			if (!is_string($metadata['issuer']) || $metadata['issuer'] !== $this->config->getIssuer()) {
+				$actualIssuer = is_string($metadata['issuer']) ? $metadata['issuer'] : gettype($metadata['issuer']);
+
 				throw new OidcDiscoveryException(
-					"Discovery metadata issuer '{$metadata['issuer']}' does not match the configured issuer '{$this->config->getIssuer()}'."
+					"Discovery metadata issuer '{$actualIssuer}' does not match the configured issuer '{$this->config->getIssuer()}'."
 				);
 			}
 
@@ -243,7 +248,7 @@
 			}
 
 			$metadata = $this->getDiscoveryMetadata(false);
-			$data = $this->fetchJson($metadata['jwks_uri']);
+			$data = $this->fetchJson($this->requireStringField($metadata, 'jwks_uri'));
 
 			try {
 				$jwkSet = JWKSet::createFromKeyData($data);
@@ -347,7 +352,11 @@
 		/**
 		 * Validate every required ID-token claim and build the result object.
 		 * Only reached after the signature has already been verified.
-		 * @param array<string, mixed> $claims
+		 *
+		 * $claims is keyed int|string, not just string: json_decode(assoc:
+		 * true) turns a JSON object key that looks like an integer (e.g.
+		 * "123") into an int array key, not a string one.
+		 * @param array<int|string, mixed> $claims
 		 * @param string $expectedNonce
 		 * @return IdTokenClaims
 		 * @throws InvalidIdTokenException
@@ -447,6 +456,27 @@
 				(int)$issuedAt,
 				$authTime !== null ? (int)$authTime : null
 			);
+		}
+
+		/**
+		 * Read a required string field out of already-validated discovery
+		 * metadata. assertValidDiscoveryMetadata() checked this field's type
+		 * when the metadata was first fetched, but that guarantee doesn't
+		 * carry across the cache (or a static analyzer's view of a plain
+		 * array) back to callers — this re-asserts it at the point of use.
+		 * @param array<string, mixed> $metadata
+		 * @param string $field
+		 * @return string
+		 * @throws OidcDiscoveryException
+		 */
+		private function requireStringField(array $metadata, string $field): string {
+			$value = $metadata[$field] ?? null;
+
+			if (!is_string($value) || $value === '') {
+				throw new OidcDiscoveryException("Discovery metadata field '{$field}' must be a non-empty string.");
+			}
+
+			return $value;
 		}
 
 		/**

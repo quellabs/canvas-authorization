@@ -131,8 +131,11 @@
 		}
 
 		/**
+		 * Returns whatever array the session held, with no claim about its
+		 * inner shape — consumeFlow() and storeFlow() each already check
+		 * is_array() on an individual entry before trusting it further.
 		 * @param SessionInterface $session
-		 * @return array<string, array<string, mixed>>
+		 * @return array<array-key, mixed>
 		 */
 		private function readFlows(SessionInterface $session): array {
 			$flows = $session->get(self::FLOWS_SESSION_KEY, []);
