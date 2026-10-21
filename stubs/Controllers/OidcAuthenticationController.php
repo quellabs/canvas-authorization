@@ -281,11 +281,12 @@
 				return $this->renderGenericFailure('missing_or_expired_completion');
 			}
 
-			if ($this->oidcConfig->getLoginMode() === 'oidc_only') {
-				$user = $this->localAccountService->createOidcOnlyProfile();
-			} else {
+			$oidcOnly = $this->oidcConfig->getLoginMode() === 'oidc_only';
+			$username = '';
+
+			if (!$oidcOnly) {
 				// The shared route also serves OIDC-only's no-fields confirmation
-				// above, so this uses the same manual field checks
+				// below, so this uses the same manual field checks
 				// AuthenticationController::processRegistration() applies via
 				// RegistrationFormValidator/ValidateAspect, rather than that
 				// declarative aspect, which can't be conditioned on login_mode
@@ -308,26 +309,51 @@
 						'csrfToken' => $request->attributes->get('csrf_token'),
 					]);
 				}
-
-				$user = $this->localAccountService->createLocalAccount(
-					(string)$request->request->get('name', ''),
-					$username,
-					(string)$request->request->get('password', '')
-				);
 			}
 
+			// Past this point we're committed to either success or a
+			// conflict — both consume the completion record per the plan;
+			// only the validation failures above, which already returned,
+			// leave it for the user to retry
 			$this->flowStore->consumeCompletion($session);
 
+			// createLocalAccount()/createOidcOnlyProfile() each flush
+			// immediately (their own, independent transaction) so the new
+			// user's generated ID is available for link() below. Wrapping
+			// both in one explicit transaction here is what actually makes
+			// them succeed or fail together — beginTrans()/rollbackTrans()/
+			// commitTrans() nest correctly around each call's own flush.
+			$connection = $this->em()->getConnection();
+			$connection->beginTrans();
+
 			try {
+				$user = $oidcOnly
+					? $this->localAccountService->createOidcOnlyProfile()
+					: $this->localAccountService->createLocalAccount(
+						(string)$request->request->get('name', ''),
+						$username,
+						(string)$request->request->get('password', '')
+					);
+
 				$this->identityRepository->link($completion->getIssuer(), $completion->getSubject(), $user->getId());
+				$connection->commitTrans();
 			} catch (OidcIdentityConflictException) {
-				// A uniqueness conflict rolls back both inserts — link()
-				// flushes the whole pending unit of work in one transaction,
-				// so the new user row never survives either
+				// A uniqueness conflict rolls back both inserts, so the new
+				// user row never survives either. Rolling back the DB
+				// transaction doesn't by itself clear EntityManager's
+				// identity map — detach() avoids a request later in the
+				// same process (a persistent worker) resolving this user ID
+				// to a "ghost" entity that no longer exists in the database.
+				$connection->rollbackTrans();
+
+				if (isset($user)) {
+					$this->em()->detach($user);
+				}
+
 				return $this->renderGenericFailure('identity_conflict');
 			}
 
-			$this->oidcLoginSession->establish($session, $user->getId(), time(), $this->oidcConfig->getLoginMode() === 'oidc_only' ? [] : ['pwd']);
+			$this->oidcLoginSession->establish($session, $user->getId(), time(), $oidcOnly ? [] : ['pwd']);
 			return $this->redirectToReturnPath($completion->getReturnPath());
 		}
 

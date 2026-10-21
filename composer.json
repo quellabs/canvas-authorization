@@ -45,6 +45,7 @@
     "web-token/jwt-library": "^4.0"
   },
   "require-dev": {
+    "cakephp/database": "^5.0",
     "phpunit/phpunit": "^11.0"
   },
   "autoload": {
@@ -54,7 +55,8 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Quellabs\\CanvasAuthorization\\Tests\\": "tests/"
+      "Quellabs\\CanvasAuthorization\\Tests\\": "tests/",
+      "App\\Entities\\": "stubs/Entities/"
     }
   },
   "extra": {

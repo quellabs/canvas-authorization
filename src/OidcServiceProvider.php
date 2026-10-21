@@ -46,14 +46,22 @@
 		private const string IDENTITY_ENTITY_CLASS = 'App\\Entities\\OidcIdentityEntity';
 
 		/**
-		 * @inheritDoc
+		 * Claims OidcClientInterface and OidcIdentityRepositoryInterface only.
+		 * @param string $className
+		 * @param array<string, mixed> $metadata
+		 * @return bool
 		 */
 		public function supports(string $className, array $metadata): bool {
 			return $className === OidcClientInterface::class || $className === OidcIdentityRepositoryInterface::class;
 		}
 
 		/**
-		 * @inheritDoc
+		 * Builds the default implementation of whichever of the two interfaces was requested.
+		 * @param string $className
+		 * @param array<int|string, mixed> $dependencies
+		 * @param array<string, mixed> $metadata
+		 * @param MethodContextInterface|null $methodContext
+		 * @return object
 		 */
 		public function createInstance(string $className, array $dependencies, array $metadata, ?MethodContextInterface $methodContext = null): object {
 			$container = ContainerLocator::getInstance();

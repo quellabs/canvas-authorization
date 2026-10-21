@@ -23,7 +23,8 @@
 		}
 
 		/**
-		 * @inheritDoc
+		 * @param string $filename
+		 * @return ConfigurationInterface
 		 */
 		public function loadConfigFile(string $filename): ConfigurationInterface {
 			if (!str_ends_with($filename, '.php')) {

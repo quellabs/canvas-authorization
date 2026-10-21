@@ -3,6 +3,24 @@
 Browser-based OpenID Connect (OIDC) Authorization Code login, as an opt-in addition to this
 package's password login. One statically configured issuer and client per application.
 
+## Running the test suites
+
+```
+php ./vendor/bin/phpunit                              # fast unit suite, mocked EntityManager, no DB needed
+php ./vendor/bin/phpunit -c phpunit.integration.xml    # real MySQL — see tests/integration-bootstrap.php
+```
+
+The integration suite connects to `127.0.0.1:3306` as `root` with no password by default
+(override with `TEST_DB_HOST`/`TEST_DB_PORT`/`TEST_DB_USER`/`TEST_DB_PASS`/`TEST_DB_NAME`),
+creates its database if missing, and hand-creates the tables matching `OidcIdentityEntity`'s
+and `UserEntity`'s annotations. It exists specifically to exercise real unique-constraint
+enforcement and real transaction rollback — behavior a mocked `EntityManager` cannot verify.
+It has already caught two bugs the unit suite and review missed: `@inheritDoc` in
+`OidcIdentityEntity`'s docblocks, which ObjectQuel's annotation reader doesn't tolerate and
+would have broken the entity in any real application; and the registration flow calling
+`link()` with a brand-new user's `getId()` before that user had ever been flushed, which is
+null/0 for an identity-strategy primary key until the insert actually runs.
+
 ## Installing
 
 **Combined login (password + OIDC), fresh app:**

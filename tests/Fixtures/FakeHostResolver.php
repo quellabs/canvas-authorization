@@ -21,7 +21,8 @@
 		}
 
 		/**
-		 * @inheritDoc
+		 * @param string $host
+		 * @return string[]
 		 */
 		public function resolve(string $host): array {
 			return $this->ipsByHost[$host] ?? [];

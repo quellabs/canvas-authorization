@@ -64,7 +64,10 @@
 		}
 
 		/**
-		 * @inheritDoc
+		 * Resolve the local user ID linked to the given (issuer, subject) pair.
+		 * @param string $issuer
+		 * @param string $subject
+		 * @return int|string|null
 		 */
 		public function findLocalUserId(string $issuer, string $subject): int|string|null {
 			$record = $this->findRecord($issuer, $subject);
@@ -72,7 +75,18 @@
 		}
 
 		/**
-		 * @inheritDoc
+		 * Create a new link between the given (issuer, subject) pair and a
+		 * local user. $localUserId must already be the user's real,
+		 * database-assigned ID — flush a newly-created user first (see
+		 * OidcLocalAccountService) and wrap both that flush and this call in
+		 * a transaction (EntityManager::getConnection()->beginTrans()/
+		 * commitTrans()/rollbackTrans(), which nest correctly) if they must
+		 * succeed or fail together.
+		 * @param string $issuer
+		 * @param string $subject
+		 * @param int|string $localUserId
+		 * @return void
+		 * @throws OidcIdentityConflictException When the identity is already linked, or a database uniqueness constraint rejects the insert.
 		 */
 		public function link(string $issuer, string $subject, int|string $localUserId): void {
 			if ($this->findRecord($issuer, $subject) !== null) {
@@ -92,22 +106,33 @@
 
 			try {
 				$this->entityManager->persist($record);
-
-				// Flush the whole pending unit of work, not just $record: a
-				// caller building a new local user alongside this link (see
-				// OidcLocalAccountService) persists that entity first without
-				// flushing it, so both inserts land in the one transaction
-				// UnitOfWork::commit() wraps a flush in. link() called on its
-				// own has nothing else pending, so this is equivalent to
-				// flushing just $record.
-				$this->entityManager->flush();
+				$this->entityManager->flush($record);
 			} catch (Throwable $e) {
+				// A failed flush leaves its entity scheduled in the unit of
+				// work rather than clearing it — left alone, it would be
+				// retried (and fail again) on the next unrelated flush() this
+				// EntityManager performs anywhere in the application
+				$this->detachQuietly($record);
+
 				// Covers both a concurrent insert for the same identity (the
 				// identityKey pre-check above lost the race) and a second
 				// identity from the same issuer for this local user (the
 				// separate (local_user_id, issuer_key) constraint) — either
 				// way, the caller gets the same generic, non-leaking message
 				throw new OidcIdentityConflictException('This identity could not be linked.', 0, $e);
+			}
+		}
+
+		/**
+		 * @param object $entity
+		 * @return void
+		 */
+		private function detachQuietly(object $entity): void {
+			try {
+				$this->entityManager->detach($entity);
+			} catch (Throwable) {
+				// Best-effort cleanup only — the conflict exception already
+				// being thrown is what matters to the caller
 			}
 		}
 

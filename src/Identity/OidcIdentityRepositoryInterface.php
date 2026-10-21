@@ -28,7 +28,9 @@
 		 * Create a new link between the given (issuer, subject) pair and a
 		 * local user. Never reassigns an existing link — an (issuer, subject)
 		 * pair that already resolves to a user (the same one or a different
-		 * one) always fails.
+		 * one) always fails. $localUserId must already be the user's real,
+		 * database-assigned ID; a caller creating both a new user and this
+		 * link in one transaction must flush the user first.
 		 * @param string $issuer
 		 * @param string $subject
 		 * @param int|string $localUserId

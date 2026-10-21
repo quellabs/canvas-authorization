@@ -91,14 +91,17 @@
 		}
 
 		/**
-		 * @inheritDoc
+		 * Gets the localUserId value
+		 * @return int|string
 		 */
 		public function getLocalUserId(): int|string {
 			return $this->localUserId;
 		}
 
 		/**
-		 * @inheritDoc
+		 * Sets the localUserId value
+		 * @param int|string $localUserId
+		 * @return $this
 		 */
 		public function setLocalUserId(int|string $localUserId): static {
 			$this->localUserId = (int)$localUserId;
@@ -106,14 +109,17 @@
 		}
 
 		/**
-		 * @inheritDoc
+		 * Gets the issuer value
+		 * @return string
 		 */
 		public function getIssuer(): string {
 			return $this->issuer;
 		}
 
 		/**
-		 * @inheritDoc
+		 * Sets the issuer value
+		 * @param string $issuer
+		 * @return $this
 		 */
 		public function setIssuer(string $issuer): static {
 			$this->issuer = $issuer;
@@ -121,14 +127,17 @@
 		}
 
 		/**
-		 * @inheritDoc
+		 * Gets the subject value
+		 * @return string
 		 */
 		public function getSubject(): string {
 			return $this->subject;
 		}
 
 		/**
-		 * @inheritDoc
+		 * Sets the subject value
+		 * @param string $subject
+		 * @return $this
 		 */
 		public function setSubject(string $subject): static {
 			$this->subject = $subject;
@@ -136,14 +145,17 @@
 		}
 
 		/**
-		 * @inheritDoc
+		 * Gets the issuerKey value
+		 * @return string
 		 */
 		public function getIssuerKey(): string {
 			return $this->issuerKey;
 		}
 
 		/**
-		 * @inheritDoc
+		 * Sets the issuerKey value
+		 * @param string $issuerKey
+		 * @return $this
 		 */
 		public function setIssuerKey(string $issuerKey): static {
 			$this->issuerKey = $issuerKey;
@@ -151,14 +163,17 @@
 		}
 
 		/**
-		 * @inheritDoc
+		 * Gets the identityKey value
+		 * @return string
 		 */
 		public function getIdentityKey(): string {
 			return $this->identityKey;
 		}
 
 		/**
-		 * @inheritDoc
+		 * Sets the identityKey value
+		 * @param string $identityKey
+		 * @return $this
 		 */
 		public function setIdentityKey(string $identityKey): static {
 			$this->identityKey = $identityKey;

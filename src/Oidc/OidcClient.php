@@ -77,7 +77,11 @@
 		}
 
 		/**
-		 * @inheritDoc
+		 * Build the provider authorization URL for a fresh login or link attempt.
+		 * @param string $state
+		 * @param string $nonce
+		 * @return AuthorizationRequest
+		 * @throws OidcDiscoveryException On invalid, inconsistent, or unreachable issuer metadata.
 		 */
 		public function createAuthorizationRequest(string $state, string $nonce): AuthorizationRequest {
 			$metadata = $this->getDiscoveryMetadata(false);
@@ -103,7 +107,14 @@
 		}
 
 		/**
-		 * @inheritDoc
+		 * Exchange an authorization code for a validated ID token.
+		 * @param string $code
+		 * @param string $codeVerifier
+		 * @param string $expectedNonce
+		 * @return IdTokenClaims
+		 * @throws OidcDiscoveryException On invalid or unreachable issuer metadata/JWKS.
+		 * @throws OidcTokenExchangeException On a token-endpoint failure.
+		 * @throws InvalidIdTokenException When the ID token is missing, malformed, or fails any validation.
 		 */
 		public function exchangeAuthorizationCode(string $code, string $codeVerifier, string $expectedNonce): IdTokenClaims {
 			$metadata = $this->getDiscoveryMetadata(false);
