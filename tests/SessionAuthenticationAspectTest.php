@@ -3,7 +3,7 @@
 	namespace Quellabs\CanvasAuthorization\Tests;
 
 	use PHPUnit\Framework\TestCase;
-	use Quellabs\Canvas\Routing\Contracts\MethodContextInterface;
+	use Quellabs\Contracts\AOP\MethodContextInterface;
 	use Quellabs\CanvasAuthorization\Exceptions\SessionAuthenticationException;
 	use Quellabs\CanvasAuthorization\SessionAuthenticationAspect;
 	use Symfony\Component\HttpFoundation\Request;

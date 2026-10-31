@@ -4,9 +4,9 @@
 
 	use App\Entities\UserEntity;
 	use Quellabs\ObjectQuel\Exception\QuelException;
-	use Quellabs\Canvas\AOP\Contracts\BeforeAspectInterface;
+	use Quellabs\Contracts\AOP\BeforeAspectInterface;
 	use Quellabs\ObjectQuel\Exception\EntityResolutionException;
-	use Quellabs\Canvas\Routing\Contracts\MethodContextInterface;
+	use Quellabs\Contracts\AOP\MethodContextInterface;
 	use Quellabs\CanvasAuthorization\Exceptions\AccountEligibilityException;
 	use Quellabs\ObjectQuel\EntityManager;
 	use Symfony\Component\HttpFoundation\Request;
