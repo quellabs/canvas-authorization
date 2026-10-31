@@ -2,8 +2,8 @@
 
 	namespace Quellabs\CanvasAuthorization;
 
-	use Quellabs\Canvas\AOP\Contracts\BeforeAspectInterface;
-	use Quellabs\Canvas\Routing\Contracts\MethodContextInterface;
+	use Quellabs\Contracts\AOP\BeforeAspectInterface;
+	use Quellabs\Contracts\AOP\MethodContextInterface;
 	use Quellabs\CanvasAuthorization\Exceptions\SessionAuthenticationException;
 	use Symfony\Component\HttpFoundation\Response;
 

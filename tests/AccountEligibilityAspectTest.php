@@ -3,7 +3,7 @@
 	namespace Quellabs\CanvasAuthorization\Tests;
 
 	use PHPUnit\Framework\TestCase;
-	use Quellabs\Canvas\Routing\Contracts\MethodContextInterface;
+	use Quellabs\Contracts\AOP\MethodContextInterface;
 	use Quellabs\CanvasAuthorization\AccountEligibilityAspect;
 	use Quellabs\CanvasAuthorization\Exceptions\AccountEligibilityException;
 	use Quellabs\CanvasAuthorization\Tests\Fixtures\FixtureEligibleUser;
