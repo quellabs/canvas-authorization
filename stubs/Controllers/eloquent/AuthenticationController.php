@@ -41,7 +41,10 @@
 		 * @param Container $container
 		 * @param PasswordResetNotifierInterface|null $passwordResetNotifier
 		 */
-		public function __construct(Container $container, ?PasswordResetNotifierInterface $passwordResetNotifier = null) {
+		public function __construct(
+			Container $container,
+			?PasswordResetNotifierInterface $passwordResetNotifier = null
+		) {
 			parent::__construct($container);
 			$this->passwordResetNotifier = $passwordResetNotifier ?? new LogPasswordResetNotifier();
 		}

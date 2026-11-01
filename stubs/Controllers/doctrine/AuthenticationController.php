@@ -23,7 +23,7 @@
 		/**
 		 * How long a password reset token remains valid after issuance.
 		 */
-		private const RESET_TOKEN_TTL_SECONDS = 3600;
+		private const int RESET_TOKEN_TTL_SECONDS = 3600;
 
 		/**
 		 * @var EntityManagerInterface
@@ -49,7 +49,10 @@
 		 * @param EntityManagerInterface $entityManager
 		 * @param PasswordResetNotifierInterface|null $passwordResetNotifier
 		 */
-		public function __construct(Container $container, EntityManagerInterface $entityManager, ?PasswordResetNotifierInterface $passwordResetNotifier = null) {
+		public function __construct(
+			Container $container, EntityManagerInterface $entityManager,
+			?PasswordResetNotifierInterface $passwordResetNotifier = null
+		) {
 			parent::__construct($container);
 			$this->entityManager = $entityManager;
 			$this->passwordResetNotifier = $passwordResetNotifier ?? new LogPasswordResetNotifier();
