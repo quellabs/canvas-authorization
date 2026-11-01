@@ -34,22 +34,26 @@
 		public static function resolve(?string $startDirectory = null): string {
 			$mappingPath = ComposerUtils::getDiscoveryMappingPath($startDirectory);
 
+			// No mapping file yet (e.g. Discover hasn't run) — can't detect anything
 			if ($mappingPath === null || !file_exists($mappingPath)) {
 				return 'objectquel';
 			}
 
 			$mapping = require $mappingPath;
 
+			// Malformed or emptied mapping file — same as not having one
 			if (!is_array($mapping)) {
 				return 'objectquel';
 			}
 
+			// First match wins; order in ORM_PACKAGES is the tie-break if both are installed
 			foreach (self::ORM_PACKAGES as $package => $orm) {
 				if (isset($mapping[$package])) {
 					return $orm;
 				}
 			}
 
+			// Neither Doctrine nor Eloquent discovered — ObjectQuel is the default
 			return 'objectquel';
 		}
 	}
