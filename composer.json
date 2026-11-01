@@ -45,7 +45,10 @@
   "autoload": {
     "psr-4": {
       "Quellabs\\CanvasAuthorization\\": "src/"
-    }
+    },
+    "exclude-from-classmap": [
+      "/tests/E2E/"
+    ]
   },
   "autoload-dev": {
     "psr-4": {
