@@ -4,6 +4,7 @@
 
 	use Quellabs\Sculpt\ConfigurationManager;
 	use Quellabs\Sculpt\Contracts\StubCommand;
+	use Quellabs\Support\OrmEngineResolver;
 
 	class MakeAuthCommand extends StubCommand {
 

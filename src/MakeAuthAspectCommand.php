@@ -4,6 +4,7 @@
 
 	use Quellabs\Sculpt\ConfigurationManager;
 	use Quellabs\Sculpt\Contracts\StubCommand;
+	use Quellabs\Support\OrmEngineResolver;
 
 	/**
 	 * Ejects a local, fully editable copy of AccountEligibilityAspect into the
