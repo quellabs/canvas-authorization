@@ -35,8 +35,10 @@
 		 * @return array<string, string>
 		 */
 		protected function getStubs(): array {
+			$orm = OrmEngineResolver::resolve();
+
 			return [
-				'Aspects/AccountEligibilityAspect.php' => 'src/Aspects/AccountEligibilityAspect.php',
+				"Aspects/{$orm}/AccountEligibilityAspect.php" => 'src/Aspects/AccountEligibilityAspect.php',
 			];
 		}
 
